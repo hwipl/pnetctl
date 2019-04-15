@@ -34,7 +34,6 @@ struct udev_device *udev_find_lower(struct udev_device *udev_device) {
 
 	next = udev_device_get_sysattr_list_entry(udev_device);
 	while (next) {
-		const char *value = udev_list_entry_get_value(next);
 		const char *name = udev_list_entry_get_name(next);
 		if (!strncmp(name, "lower_", 6)) {
 			lower_name = name + 6;
