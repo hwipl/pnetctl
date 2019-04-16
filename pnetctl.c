@@ -1,26 +1,109 @@
 #include <libudev.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
+/*
+ * ********************
+ * *** DEVICES PART ***
+ * ********************
+ */
+
+/* struct for devices */
+struct device {
+	/* list */
+	struct device *next;
+
+	/* udev */
+	struct udev_device *udev_device;
+	struct udev_device *udev_parent;
+	struct udev_device *udev_lowest;
+
+	/* names */
+	const char *subsystem;
+	const char *name;
+	const char *parent;
+	const char *lowest;
+};
+
+/* list of devices */
+struct device devices_list = {0};
+
+/* get next device in devices list */
+struct device *get_next_device(struct device *device) {
+	return device->next;
+}
+
+/* create a new device in devices list */
+struct device *new_device() {
+	struct device *device;
+	struct device *slot;
+	struct device *next;
+
+	device = malloc(sizeof(*device));
+	memset(device, 0, sizeof(*device));
+
+	/* add it to devices list */
+	slot = &devices_list;
+	next = get_next_device(&devices_list);
+	while (next) {
+		slot = next;
+		next = get_next_device(next);
+	}
+	slot->next = device;
+
+	return device;
+}
+
+/* free all devices in devices list */
+void free_devices() {
+	struct device *next;
+	struct device *cur;
+
+	next = get_next_device(&devices_list);
+	while (next) {
+		// TODO: also free udev devices?
+		cur = next;
+		next = get_next_device(next);
+		free(cur);
+	}
+}
+
+/*
+ * *****************
+ * *** UDEV PART ***
+ * *****************
+ */
+
 /* udev return codes */
-enum udev_ret {
+enum udev_rc {
 	UDEV_OK,
 	UDEV_FAILED,
 	UDEV_ENUM_FAILED,
 	UDEV_MATCH_FAILED,
 	UDEV_SCAN_FAILED,
 	UDEV_DEV_FAILED,
+	UDEV_HANDLE_FAILED,
 };
 
 /* handle a device found by scan_devices() */
-int handle_device(const char *subsystem, const char *name, const char *pci_id,
-		  const char* lowest) {
-	printf("SUBSYSTEM %s ", subsystem);
-	printf("SYSNAME %s ", name);
-	printf("PARENT %s", pci_id);
-	if (lowest)
-		printf(" LOWEST %s", lowest);
-	printf("\n");
+int handle_device(struct udev_device *udev_device,
+		  struct udev_device *udev_parent,
+		  struct udev_device *udev_lowest) {
+	struct device *device;
+
+	device = new_device();
+	if (!device)
+		return UDEV_HANDLE_FAILED;
+
+	device->udev_device = udev_device;
+	device->udev_parent = udev_parent;
+	device->udev_lowest = udev_lowest;
+
+	device->name = udev_device_get_sysname(udev_device);
+	device->subsystem = udev_device_get_subsystem(udev_device);
+	device->parent = udev_device_get_sysname(udev_parent);
+	device->lowest = udev_device_get_sysname(udev_lowest);
 
 	return 0;
 }
@@ -67,28 +150,21 @@ struct udev_device *udev_find_lowest(struct udev_device *udev_device) {
 
 /* handle the found udev device */
 int udev_handle_device(struct udev_device *udev_device) {
-	struct udev_device *udev_parent;
-	struct udev_device *udev_lowest;
-	const char *udev_parent_sysname;
-	const char *lowest_name = NULL;
+	struct udev_device *udev_parent = NULL;
+	struct udev_device *udev_lowest = NULL;
 	const char *subsystem;
-	const char *sysname;
 	int rc;
 
-	sysname = udev_device_get_sysname(udev_device);
 	subsystem = udev_device_get_subsystem(udev_device);
 	udev_parent = udev_device_get_parent(udev_device);
-	udev_parent_sysname = udev_device_get_sysname(udev_parent);
 
-	if (!strncmp(subsystem, "net", 3)) {
+	if (!strncmp(subsystem, "net", 3))
 		udev_lowest = udev_find_lowest(udev_device);
-		if (udev_lowest != udev_device)
-			lowest_name = udev_device_get_sysname(udev_lowest);
-	}
-	rc = handle_device(subsystem, sysname, udev_parent_sysname,
-			   lowest_name);
+
+	rc = handle_device(udev_device, udev_parent, udev_lowest);
 	if (rc)
 		return rc;
+
 	return UDEV_OK;
 }
 
@@ -134,10 +210,44 @@ int udev_scan_devices() {
 	return UDEV_OK;
 }
 
+/*
+ * *****************
+ * *** MAIN PART ***
+ * *****************
+ */
+
 /* main function */
 int main() {
+	struct device *next;
 	int rc;
 
+	/* get all devices via udev and put them in devices list */
 	rc = udev_scan_devices();
-	return rc;
+	if (rc)
+		return rc;
+
+	/* handle each device in devices list */
+	printf("%10.10s %15.15s %16.16s %15.15s\n", "Type:", "Name:", "PCI-ID",
+	       "Lowest");
+	next = get_next_device(&devices_list);
+	while (next) {
+		printf("%10.10s ", next->subsystem);
+		printf(" %15.15s", next->name);
+		if (next->parent)
+			printf(" %16.16s", next->parent);
+		else
+			printf(" %16.16s", "n/a");
+		if (next->lowest)
+			printf(" %15.15s", next->lowest);
+		else
+			printf(" %15.15s", "n/a");
+		printf("\n");
+
+		next = get_next_device(next);
+	}
+
+	/* free devices in devices list */
+	free_devices();
+
+	return 0;
 }
