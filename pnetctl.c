@@ -3,6 +3,139 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <rdma/ib_user_verbs.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/netlink.h>
+#include <netlink/socket.h>
+#include <netlink/attr.h>
+#include <linux/smc.h>
+
+#define SMC_MAX_PNETID_LEN 16 /* maximum length of pnetids */
+
+/*
+ * ********************
+ * *** NETLINK PART ***
+ * ********************
+ */
+
+struct nl_sock *nl_sock;
+int nl_version;
+int nl_family;
+
+/* netlink policy for pnetid attributes */
+static struct nla_policy smc_pnet_policy[SMC_PNETID_MAX + 1] = {
+	[SMC_PNETID_NAME] = {
+		.type = NLA_NUL_STRING,
+		/* TODO: make sure +1 is correct */
+		.maxlen = SMC_MAX_PNETID_LEN + 1
+	},
+	[SMC_PNETID_ETHNAME] = {
+		.type = NLA_NUL_STRING,
+		/* TODO: make sure it is not -1 */
+		.maxlen = IFNAMSIZ
+	},
+	[SMC_PNETID_IBNAME] = {
+		.type = NLA_NUL_STRING,
+		/* TODO: make sure it is not -1 */
+		.maxlen = IB_DEVICE_NAME_MAX
+	},
+	[SMC_PNETID_IBPORT] = { .type = NLA_U8 }
+};
+
+/* receive and parse netlink message */
+int nl_parse_msg(struct nl_msg *msg, void *arg) {
+	struct nlmsghdr *hdr = nlmsg_hdr(msg);
+	struct nlattr *attrs[SMC_PNETID_MAX + 1];
+
+	if (genlmsg_parse(hdr, 0, attrs, SMC_PNETID_MAX, smc_pnet_policy) < 0) {
+		printf("Error parsing netlink attributes\n");
+		return NL_STOP;
+	}
+
+	if (attrs[SMC_PNETID_NAME]) {
+		/* pnetid name is present in message */
+		printf("pnetid: %s", nla_get_string(attrs[SMC_PNETID_NAME]));
+	}
+	if (attrs[SMC_PNETID_ETHNAME]) {
+		/* eth name is present in message */
+		printf(" eth: %s",
+		       nla_get_string(attrs[SMC_PNETID_ETHNAME]));
+	}
+	if (attrs[SMC_PNETID_IBNAME]) {
+		/* ib name is present in message */
+		printf(" ib: %s", nla_get_string(attrs[SMC_PNETID_IBNAME]));
+	}
+	if (attrs[SMC_PNETID_IBPORT]) {
+		/* ib port is present in message */
+		printf(" ib-port: %d", nla_get_u8(attrs[SMC_PNETID_IBPORT]));
+	}
+	printf("\n");
+	return NL_OK;
+}
+
+/* flush all pnetids */
+void nl_flush_pnetids() {
+	genl_send_simple(nl_sock, nl_family, SMC_PNETID_FLUSH, nl_version, 0);
+	nl_recvmsgs_default(nl_sock);
+}
+
+/* get all pnetids */
+void nl_get_pnetids() {
+	genl_send_simple(nl_sock, nl_family, SMC_PNETID_GET, nl_version,
+			 NLM_F_DUMP);
+	/* check reply */
+	nl_recvmsgs_default(nl_sock);
+}
+
+/* set pnetid */
+void nl_send_pnetid(const char *pnet_name, const char *eth_name,
+		    const char *ib_name, char ib_port) {
+	struct nl_msg* msg;
+	int rc;
+
+	/* construct netlink message */
+	msg = nlmsg_alloc();
+	genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, nl_family, 0, NLM_F_REQUEST,
+		    SMC_PNETID_ADD, nl_version);
+	nla_put_string(msg, SMC_PNETID_NAME, pnet_name);
+	nla_put_string(msg, SMC_PNETID_ETHNAME, eth_name);
+	nla_put_string(msg, SMC_PNETID_IBNAME, ib_name);
+	nla_put_u8(msg, SMC_PNETID_IBPORT, ib_port);
+
+	/* send and free netlink message */
+	rc = nl_send_auto(nl_sock, msg);
+	if (rc < 0)
+		printf("Error sending request: %d\n", rc);
+	nlmsg_free(msg);
+
+	/* check reply */
+	nl_recvmsgs_default(nl_sock);
+}
+
+/* set pnetids */
+void nl_set_pnetids() {
+	nl_flush_pnetids();
+	// Just a test... TODO: do it correctly?
+	nl_send_pnetid("testid", "lo", "mlx5_0", 1);
+}
+
+/* init netlink part */
+void nl_init() {
+	nl_sock = nl_socket_alloc();
+	nl_socket_modify_cb(nl_sock, NL_CB_VALID, NL_CB_CUSTOM, nl_parse_msg,
+			    NULL);
+	genl_connect(nl_sock);
+	nl_family = genl_ctrl_resolve(nl_sock, SMCR_GENL_FAMILY_NAME);
+	nl_version = SMCR_GENL_FAMILY_VERSION;
+}
+
+/* cleanup netlink part */
+void nl_cleanup() {
+	nl_close(nl_sock);
+	nl_socket_free(nl_sock);
+}
+
 /*
  * ********************
  * *** DEVICES PART ***
@@ -245,6 +378,13 @@ int main() {
 
 		next = get_next_device(next);
 	}
+
+	/* try to receive pnetids via netlink */
+	nl_init();
+	// TODO: do it correctly
+	nl_set_pnetids();
+	nl_get_pnetids();
+	nl_cleanup();
 
 	/* free devices in devices list */
 	free_devices();
