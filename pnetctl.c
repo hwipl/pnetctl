@@ -10,6 +10,7 @@
 #include <netlink/socket.h>
 #include <netlink/attr.h>
 #include <linux/smc.h>
+#include <dirent.h>
 
 #define SMC_MAX_PNETID_LEN 16 /* maximum length of pnetids */
 
@@ -157,6 +158,9 @@ struct device {
 	const char *name;
 	const char *parent;
 	const char *lowest;
+
+	/* infiniband */
+	int ib_port;
 };
 
 /* list of devices */
@@ -222,7 +226,8 @@ enum udev_rc {
 /* handle a device found by scan_devices() */
 int handle_device(struct udev_device *udev_device,
 		  struct udev_device *udev_parent,
-		  struct udev_device *udev_lowest) {
+		  struct udev_device *udev_lowest,
+		  int ib_port) {
 	struct device *device;
 
 	device = new_device();
@@ -237,6 +242,7 @@ int handle_device(struct udev_device *udev_device,
 	device->subsystem = udev_device_get_subsystem(udev_device);
 	device->parent = udev_device_get_sysname(udev_parent);
 	device->lowest = udev_device_get_sysname(udev_lowest);
+	device->ib_port = ib_port;
 
 	return 0;
 }
@@ -281,20 +287,61 @@ struct udev_device *udev_find_lowest(struct udev_device *udev_device) {
 	return lowest;
 }
 
+/* find infiniband ports of a udev device */
+int udev_find_ibports(struct udev_device *udev_device, int *first, int *last) {
+	const char *udev_path = udev_device_get_syspath(udev_device);
+	int path_len = strlen(udev_path) + strlen("/ports") + 1;
+	char ports_dir[path_len];
+	struct dirent *dir_ent;
+	int num_ports = 0;
+	DIR *dir;
+
+	/* construct directory path, read directory, and extract ib ports */
+	snprintf(ports_dir, sizeof(ports_dir), "%s/ports", udev_path);
+	dir = opendir(ports_dir);
+	if (dir) {
+		*first = -1;
+		*last = -1;
+		while ((dir_ent = readdir(dir)) != NULL) {
+			if (!strncmp(dir_ent->d_name, ".", 1))
+				continue;
+			num_ports++;
+			if (*first == -1)
+				*first = atoi(dir_ent->d_name);
+			*last = atoi(dir_ent->d_name);
+		}
+		closedir(dir);
+	}
+
+	return num_ports;
+}
+
 /* handle the found udev device */
 int udev_handle_device(struct udev_device *udev_device) {
 	struct udev_device *udev_parent = NULL;
 	struct udev_device *udev_lowest = NULL;
+	int ib_port_first = -1;
+	int ib_port_last = -1;
 	const char *subsystem;
+	int ib_ports = 0;
 	int rc;
 
 	subsystem = udev_device_get_subsystem(udev_device);
 	udev_parent = udev_device_get_parent(udev_device);
 
-	if (!strncmp(subsystem, "net", 3))
+	if (!strncmp(subsystem, "net", 3)) {
 		udev_lowest = udev_find_lowest(udev_device);
+		rc = handle_device(udev_device, udev_parent, udev_lowest, -1);
+	}
 
-	rc = handle_device(udev_device, udev_parent, udev_lowest);
+	if (!strncmp(subsystem, "infiniband", 10)) {
+	       ib_ports = udev_find_ibports(udev_device, &ib_port_first,
+					    &ib_port_last);
+	       for (int i = ib_port_first; i < ib_port_first + ib_ports; i++)
+		       rc = handle_device(udev_device, udev_parent, udev_lowest,
+					  i);
+	}
+
 	if (rc)
 		return rc;
 
@@ -360,11 +407,11 @@ int main() {
 		return rc;
 
 	/* handle each device in devices list */
-	printf("%10.10s %15.15s %16.16s %15.15s\n", "Type:", "Name:", "PCI-ID",
-	       "Lowest");
+	printf("%10.10s %15.15s %16.16s %15.15s %9.9s\n", "Type:", "Name:",
+	       "PCI-ID:", "Lowest:", "IB-Port:");
 	next = get_next_device(&devices_list);
 	while (next) {
-		printf("%10.10s ", next->subsystem);
+		printf("%10.10s", next->subsystem);
 		printf(" %15.15s", next->name);
 		if (next->parent)
 			printf(" %16.16s", next->parent);
@@ -374,6 +421,10 @@ int main() {
 			printf(" %15.15s", next->lowest);
 		else
 			printf(" %15.15s", "n/a");
+		if (next->ib_port != -1)
+			printf(" %9d", next->ib_port);
+		else
+			printf(" %9.9s", "n/a");
 		printf("\n");
 
 		next = get_next_device(next);
