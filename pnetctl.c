@@ -14,6 +14,9 @@
 
 #define SMC_MAX_PNETID_LEN 16 /* maximum length of pnetids */
 
+void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid);
+void set_pnetid_for_eth(const char *dev_name, const char* pnetid);
+
 /*
  * ********************
  * *** NETLINK PART ***
@@ -54,24 +57,26 @@ int nl_parse_msg(struct nl_msg *msg, void *arg) {
 		return NL_STOP;
 	}
 
-	if (attrs[SMC_PNETID_NAME]) {
-		/* pnetid name is present in message */
-		printf("pnetid: %s", nla_get_string(attrs[SMC_PNETID_NAME]));
+	if (!attrs[SMC_PNETID_NAME]) {
+		/* pnetid name is not present in message, abort */
+		return NL_OK;
 	}
 	if (attrs[SMC_PNETID_ETHNAME]) {
 		/* eth name is present in message */
-		printf(" eth: %s",
-		       nla_get_string(attrs[SMC_PNETID_ETHNAME]));
+		set_pnetid_for_eth(nla_get_string(attrs[SMC_PNETID_ETHNAME]),
+				   nla_get_string(attrs[SMC_PNETID_NAME]));
 	}
 	if (attrs[SMC_PNETID_IBNAME]) {
 		/* ib name is present in message */
-		printf(" ib: %s", nla_get_string(attrs[SMC_PNETID_IBNAME]));
+		if (!attrs[SMC_PNETID_IBPORT]) {
+			/* ib port is not present in message, abort */
+			printf("Error retrieving netlink IB attributes\n");
+			return NL_OK;
+		}
+		set_pnetid_for_ib(nla_get_string(attrs[SMC_PNETID_IBNAME]),
+				  nla_get_u8(attrs[SMC_PNETID_IBPORT]),
+				  nla_get_string(attrs[SMC_PNETID_NAME]));
 	}
-	if (attrs[SMC_PNETID_IBPORT]) {
-		/* ib port is present in message */
-		printf(" ib-port: %d", nla_get_u8(attrs[SMC_PNETID_IBPORT]));
-	}
-	printf("\n");
 	return NL_OK;
 }
 
@@ -161,6 +166,9 @@ struct device {
 
 	/* infiniband */
 	int ib_port;
+
+	/* pnetid */
+	char pnetid[SMC_MAX_PNETID_LEN + 1];
 };
 
 /* list of devices */
@@ -203,6 +211,44 @@ void free_devices() {
 		cur = next;
 		next = get_next_device(next);
 		free(cur);
+	}
+}
+
+/* set pnetid for eth device */
+void set_pnetid_for_eth(const char *dev_name, const char* pnetid) {
+	struct device *next;
+
+	next = get_next_device(&devices_list);
+	while (next) {
+		if (!strncmp(next->subsystem, "net", 3)) {
+			// TODO: use strncmp?
+			if (!strcmp(next->name, dev_name) ||
+			    !strcmp(next->lowest, dev_name)) {
+				strncpy(next->pnetid, pnetid,
+					SMC_MAX_PNETID_LEN);
+			}
+
+		}
+		next = get_next_device(next);
+	}
+}
+
+/* set pnetid for eth device */
+void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid) {
+	struct device *next;
+
+	next = get_next_device(&devices_list);
+	while (next) {
+		if (!strncmp(next->subsystem, "infiniband", 10)) {
+			// TODO: use strncmp?
+			if (!strcmp(next->name, dev_name) &&
+			    next->ib_port == dev_port) {
+				strncpy(next->pnetid, pnetid,
+					SMC_MAX_PNETID_LEN);
+			}
+
+		}
+		next = get_next_device(next);
 	}
 }
 
@@ -406,12 +452,20 @@ int main() {
 	if (rc)
 		return rc;
 
+	/* try to receive pnetids via netlink */
+	nl_init();
+	// TODO: do it correctly
+	nl_set_pnetids();
+	nl_get_pnetids();
+	nl_cleanup();
+
 	/* handle each device in devices list */
-	printf("%10.10s %15.15s %16.16s %15.15s %9.9s\n", "Type:", "Name:",
-	       "PCI-ID:", "Lowest:", "IB-Port:");
+	printf("%18.18s %10.10s %15.15s %16.16s %15.15s %9.9s\n", "Pnetid:",
+	       "Type:", "Name:", "PCI-ID:", "Lowest:", "IB-Port:");
 	next = get_next_device(&devices_list);
 	while (next) {
-		printf("%10.10s", next->subsystem);
+		printf("%18.18s", next->pnetid);
+		printf(" %10.10s", next->subsystem);
 		printf(" %15.15s", next->name);
 		if (next->parent)
 			printf(" %16.16s", next->parent);
@@ -429,13 +483,6 @@ int main() {
 
 		next = get_next_device(next);
 	}
-
-	/* try to receive pnetids via netlink */
-	nl_init();
-	// TODO: do it correctly
-	nl_set_pnetids();
-	nl_get_pnetids();
-	nl_cleanup();
 
 	/* free devices in devices list */
 	free_devices();
