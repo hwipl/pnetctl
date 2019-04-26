@@ -1,6 +1,7 @@
 #include <libudev.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 
 #include <rdma/ib_user_verbs.h>
@@ -13,6 +14,7 @@
 #include <dirent.h>
 
 #define SMC_MAX_PNETID_LEN 16 /* maximum length of pnetids */
+#define IB_DEFAULT_PORT 1 /* default port for infiniband devices */
 
 void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid);
 void set_pnetid_for_eth(const char *dev_name, const char* pnetid);
@@ -95,8 +97,8 @@ void nl_get_pnetids() {
 }
 
 /* set pnetid */
-void nl_send_pnetid(const char *pnet_name, const char *eth_name,
-		    const char *ib_name, char ib_port) {
+void nl_set_pnetid(const char *pnet_name, const char *eth_name,
+		   const char *ib_name, char ib_port) {
 	struct nl_msg* msg;
 	int rc;
 
@@ -105,9 +107,14 @@ void nl_send_pnetid(const char *pnet_name, const char *eth_name,
 	genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, nl_family, 0, NLM_F_REQUEST,
 		    SMC_PNETID_ADD, nl_version);
 	nla_put_string(msg, SMC_PNETID_NAME, pnet_name);
-	nla_put_string(msg, SMC_PNETID_ETHNAME, eth_name);
-	nla_put_string(msg, SMC_PNETID_IBNAME, ib_name);
-	nla_put_u8(msg, SMC_PNETID_IBPORT, ib_port);
+	if (eth_name)
+		nla_put_string(msg, SMC_PNETID_ETHNAME, eth_name);
+	if (ib_name) {
+		nla_put_string(msg, SMC_PNETID_IBNAME, ib_name);
+		if (ib_port == -1)
+			ib_port = IB_DEFAULT_PORT;
+		nla_put_u8(msg, SMC_PNETID_IBPORT, ib_port);
+	}
 
 	/* send and free netlink message */
 	rc = nl_send_auto(nl_sock, msg);
@@ -117,13 +124,6 @@ void nl_send_pnetid(const char *pnet_name, const char *eth_name,
 
 	/* check reply */
 	nl_recvmsgs_default(nl_sock);
-}
-
-/* set pnetids */
-void nl_set_pnetids() {
-	nl_flush_pnetids();
-	// Just a test... TODO: do it correctly?
-	nl_send_pnetid("testid", "lo", "mlx5_0", 1);
 }
 
 /* init netlink part */
@@ -373,7 +373,7 @@ int udev_handle_device(struct udev_device *udev_device) {
 	int ib_port_last = -1;
 	const char *subsystem;
 	int ib_ports = 0;
-	int rc;
+	int rc = 0;
 
 	subsystem = udev_device_get_subsystem(udev_device);
 	udev_parent = udev_device_get_parent(udev_device);
@@ -541,8 +541,106 @@ void print_device_table() {
 	}
 }
 
+/* print usage */
+void print_usage() {
+	printf("------------------------------------------------------------\n"
+	       "Usage:\n"
+	       "------------------------------------------------------------\n"
+	       "pnetctl			Print all devices and pnetids\n"
+	       "pnetctl <options>	Run commands specified by options\n"
+	       "			(see below)\n"
+	       "------------------------------------------------------------\n"
+	       "Options:\n"
+	       "------------------------------------------------------------\n"
+	       "-a <pnetid>		Add pnetid. Requires -n or -i\n"
+	       "-r <pnetid>		Remove pnetid\n"
+	       "-f			Flush pnetids\n"
+	       "-n <net_dev>		Specify net device\n"
+	       "-i <ib_dev>		Specify infiniband device\n"
+	       "-p <ib_port>		Specify infiniband port\n"
+	       "			(default: %d)\n"
+	       "-h			Print this help\n",
+	       IB_DEFAULT_PORT
+	       );
+}
+
+/* parse command line arguments and call other functions */
+int parse_cmd_line(int argc, char **argv) {
+	char *net_device = NULL;
+	char *ib_device = NULL;
+	char *pnetid = NULL;
+	char ib_port = -1;
+	int remove = 0;
+	int flush = 0;
+	int add = 0;
+	int c;
+
+	/* try to get all arguments */
+	while ((c = getopt (argc, argv, "a:fhi:n:p:r:")) != -1) {
+		switch (c) {
+		case 'a':
+			add = 1;
+			pnetid = optarg;
+			break;
+		case 'f':
+			flush = 1;
+			break;
+		case 'r':
+			remove = 1;
+			pnetid = optarg;
+			break;
+		case 'n':
+			net_device = optarg;
+			break;
+		case 'i':
+			ib_device = optarg;
+			break;
+		case 'p':
+			ib_port = atoi(optarg);
+			break;
+		case 'h':
+			print_usage();
+			return EXIT_SUCCESS;
+		default:
+			goto fail;
+		}
+	}
+
+	/* check for conflicting command line parameters */
+	if ((add && flush) || (add && remove) || (remove && flush))
+		goto fail;
+
+	if (flush) {
+		/* flush all pnetids and quit */
+		nl_flush_pnetids();
+		return EXIT_SUCCESS;
+	}
+
+	if (remove) {
+		/* remove a specific pnetid */
+		// TODO: add pnetid removing
+		return EXIT_SUCCESS;
+	}
+
+	if (add) {
+		/* add a pnetid entry */
+		if (!ib_device && !net_device)
+			goto fail;
+		nl_set_pnetid(pnetid, net_device, ib_device, ib_port);
+		return EXIT_SUCCESS;
+	}
+
+	/* nothing done */
+	// TODO: print_device_table(); instead?
+	print_usage();
+	return EXIT_SUCCESS;
+fail:
+	print_usage();
+	return EXIT_FAILURE;
+}
+
 /* main function */
-int main() {
+int main(int argc, char **argv) {
 	int rc;
 
 	/* get all devices via udev and put them in devices list */
@@ -552,16 +650,19 @@ int main() {
 
 	/* try to receive pnetids via netlink */
 	nl_init();
-	// TODO: do it correctly
-	nl_set_pnetids();
 	nl_get_pnetids();
+
+	if (argc > 1) {
+		/* there are extra arguments, parse them */
+		parse_cmd_line(argc, argv);
+	} else {
+		/* no extra arguments, just print devices to terminal */
+		print_device_table();
+	}
+
+	/* cleanup netlink and free devices in devices list */
 	nl_cleanup();
-
-	/* print devices to terminal */
-	print_device_table();
-
-	/* free devices in devices list */
 	free_devices();
 
-	return 0;
+	exit(EXIT_SUCCESS);
 }
