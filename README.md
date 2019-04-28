@@ -72,4 +72,6 @@ n/a
 The *pnetid* column shows the pnetids found on your system. For each pnetid,
 you can see the devices with their *type*, *name*, *port* (for ib devices), and
 *PCI-ID* in the respective columns. The special pnetid *n/a* is used to display
-all devices without a pnetid.
+all devices without a pnetid. Supported device types are linux net devices
+(*net*) like, e.g., `lo` or `eth0` and infiniband devices (*ib*) like, e.g.,
+`mlx4_1` or `mlx5_0`.
