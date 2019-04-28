@@ -1,7 +1,10 @@
 # pnetctl
 
-pnetctl is a command line tool that allows to configure pnetids for devices and
-list devices with their pnetids.
+pnetctl is a Linux command line tool for configuring and listing physical
+network IDs (pnetids) of devices. The [SMC
+protocol](https://www.rfc-editor.org/info/rfc7609) implementation in Linux uses
+pnetids to determine which network and infiniband devices are attached to the
+same physical network and, thus, can be used together for SMC connections.
 
 ## Installation
 
