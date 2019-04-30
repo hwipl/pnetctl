@@ -8,7 +8,7 @@ same physical network and, thus, can be used together for SMC connections.
 
 ## Installation
 
-In order to compile, install, and use pnetctl, you need to have it's
+In order to compile, install, and use pnetctl, you need to have its
 dependencies available on your system:
 
 * libudev
