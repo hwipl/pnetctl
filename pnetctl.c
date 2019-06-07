@@ -11,7 +11,9 @@
 #include <netlink/socket.h>
 #include <netlink/attr.h>
 #include <linux/smc.h>
+#include <sys/stat.h>
 #include <dirent.h>
+#include <fcntl.h>
 
 #define SMC_MAX_PNETID_LEN 16 /* maximum length of pnetids */
 #define IB_DEFAULT_PORT 1 /* default port for infiniband devices */
@@ -274,6 +276,45 @@ enum udev_rc {
 	UDEV_HANDLE_FAILED,
 };
 
+/* read pnetid from util_string into buffer */
+int read_util_string(const char *file, char *buffer) {
+	int fd = open(file, O_RDONLY);
+	read(fd, buffer, SMC_MAX_PNETID_LEN);
+	return 0;
+}
+
+/* helper for finding util strings of pci devices */
+int find_pci_util_string(struct device *device) {
+	const char *udev_path = udev_device_get_syspath(device->udev_parent);
+	int path_len = strlen(udev_path) + strlen("/util_string") + 1;
+	char util_string_path[path_len];
+	struct udev_list_entry *next;
+
+	next = udev_device_get_sysattr_list_entry(device->udev_parent);
+	while (next) {
+		const char *name = udev_list_entry_get_name(next);
+		if (!strncmp(name, "util_string", 11)) {
+			snprintf(util_string_path, sizeof(util_string_path),
+				 "%s/util_string", udev_path);
+			read_util_string(util_string_path, device->pnetid);
+			break;
+		}
+		next = udev_list_entry_get_next(next);
+	}
+
+	return 0;
+}
+
+/* try to find a util_string for the device and read the pnetid */
+int find_util_string(struct device *device) {
+	/* pci device */
+	if (device->parent_subsystem &&
+	    !strncmp(device->parent_subsystem, "pci", 3))
+		find_pci_util_string(device);
+
+	return 0;
+}
+
 /* handle device helper */
 struct device *_handle_device(struct udev_device *udev_device,
 			      struct udev_device *udev_parent,
@@ -285,6 +326,7 @@ struct device *_handle_device(struct udev_device *udev_device,
 	if (!device)
 		return NULL;
 
+	/* initialize struct members */
 	device->udev_device = udev_device;
 	device->udev_parent = udev_parent;
 	device->udev_lowest = udev_lowest;
@@ -295,6 +337,9 @@ struct device *_handle_device(struct udev_device *udev_device,
 	device->parent_subsystem = udev_device_get_subsystem(udev_parent);
 	device->lowest = udev_device_get_sysname(udev_lowest);
 	device->ib_port = ib_port;
+
+	/* try to initialize pnetid from util_string */
+	find_util_string(device);
 
 	return device;
 }
