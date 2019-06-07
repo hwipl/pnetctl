@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <iconv.h>
 
 #define SMC_MAX_PNETID_LEN 16 /* maximum length of pnetids */
 #define IB_DEFAULT_PORT 1 /* default port for infiniband devices */
@@ -278,8 +279,33 @@ enum udev_rc {
 
 /* read pnetid from util_string into buffer */
 int read_util_string(const char *file, char *buffer) {
-	int fd = open(file, O_RDONLY);
-	read(fd, buffer, SMC_MAX_PNETID_LEN);
+	char read_buffer[SMC_MAX_PNETID_LEN];
+	char *read_ptr = read_buffer;
+	size_t read_count;
+	size_t conv_count;
+	iconv_t cd;
+	int fd;
+	int rc;
+
+	/* initialize ebcdic to ascii converter */
+	cd = iconv_open("ASCII", "CP500");
+	if (cd == (iconv_t) -1)
+		return -1;
+
+	/* open and read file to temporary buffer*/
+	fd  = open(file, O_RDONLY);
+	if (fd == -1)
+		return -1;
+	read_count = read(fd, read_buffer, SMC_MAX_PNETID_LEN);
+	if (read_count == -1)
+		return -1;
+
+	/* convert pnetid from ebcdic to ascii; write to output buffer */
+	conv_count = SMC_MAX_PNETID_LEN;
+	rc = iconv(cd, &read_ptr, &read_count, &buffer, &conv_count);
+	if (rc == -1)
+		return -1;
+
 	return 0;
 }
 
