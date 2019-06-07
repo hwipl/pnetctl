@@ -163,6 +163,7 @@ struct device {
 	const char *subsystem;
 	const char *name;
 	const char *parent;
+	const char *parent_subsystem;
 	const char *lowest;
 
 	/* infiniband */
@@ -291,6 +292,7 @@ struct device *_handle_device(struct udev_device *udev_device,
 	device->name = udev_device_get_sysname(udev_device);
 	device->subsystem = udev_device_get_subsystem(udev_device);
 	device->parent = udev_device_get_sysname(udev_parent);
+	device->parent_subsystem = udev_device_get_subsystem(udev_parent);
 	device->lowest = udev_device_get_sysname(udev_lowest);
 	device->ib_port = ib_port;
 
@@ -481,20 +483,20 @@ int udev_scan_devices() {
 /* print a horizontal line on screen */
 void print_line() {
 	printf("----------------------------------------------------------");
-	printf("----\n");
+	printf("----------\n");
 }
 
 /* print a horizontal bold line on screen */
 void print_bold_line() {
 	printf("==========================================================");
-	printf("====\n");
+	printf("==========\n");
 }
 
 /* print the header on screen */
 void print_header() {
 	print_bold_line();
-	printf("%-16s %5.5s %15.15s %6.6s %16.16s\n", "Pnetid:", "Type:",
-	       "Name:", "Port:", "PCI-ID:");
+	printf("%-16s %5.5s %15.15s %6.6s %5.5s %16.16s\n", "Pnetid:", "Type:",
+	       "Name:", "Port:", "Bus:", "Bus-ID:");
 	print_bold_line();
 }
 
@@ -516,6 +518,10 @@ void print_device(struct device *device) {
 		printf(" %15.15s", device->name);
 		printf(" %6.6s", "");
 	}
+	if (device->parent_subsystem)
+		printf(" %5.5s", device->parent_subsystem);
+	else
+		printf(" %5.5s", "n/a");
 	if (device->parent)
 		printf(" %16.16s", device->parent);
 	else
