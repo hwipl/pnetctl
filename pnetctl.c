@@ -15,6 +15,7 @@
 
 #define SMC_MAX_PNETID_LEN 16 /* maximum length of pnetids */
 #define IB_DEFAULT_PORT 1 /* default port for infiniband devices */
+#define DEV_TYPE_ISM "ism" /* device type for ISM devices */
 
 void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid);
 void set_pnetid_for_eth(const char *dev_name, const char* pnetid);
@@ -272,16 +273,16 @@ enum udev_rc {
 	UDEV_HANDLE_FAILED,
 };
 
-/* handle a device found by scan_devices() */
-int handle_device(struct udev_device *udev_device,
-		  struct udev_device *udev_parent,
-		  struct udev_device *udev_lowest,
-		  int ib_port) {
+/* handle device helper */
+struct device *_handle_device(struct udev_device *udev_device,
+			      struct udev_device *udev_parent,
+			      struct udev_device *udev_lowest,
+			      int ib_port) {
 	struct device *device;
 
 	device = new_device();
 	if (!device)
-		return UDEV_HANDLE_FAILED;
+		return NULL;
 
 	device->udev_device = udev_device;
 	device->udev_parent = udev_parent;
@@ -293,6 +294,28 @@ int handle_device(struct udev_device *udev_device,
 	device->lowest = udev_device_get_sysname(udev_lowest);
 	device->ib_port = ib_port;
 
+	return device;
+}
+
+/* handle a device found by scan_devices() */
+int handle_device(struct udev_device *udev_device,
+		  struct udev_device *udev_parent,
+		  struct udev_device *udev_lowest,
+		  int ib_port) {
+	if (_handle_device(udev_device, udev_parent, udev_lowest, ib_port))
+		return 0;
+
+	return UDEV_HANDLE_FAILED;
+}
+
+/* handle an ism device found by scan_devices() */
+int handle_ism_device(struct udev_device *udev_device) {
+	struct device *device;
+
+	device = _handle_device(udev_device, udev_device, NULL, -1);
+	if (!device)
+		return UDEV_HANDLE_FAILED;
+	device->subsystem = DEV_TYPE_ISM;
 	return 0;
 }
 
@@ -372,6 +395,7 @@ int udev_handle_device(struct udev_device *udev_device) {
 	int ib_port_first = -1;
 	int ib_port_last = -1;
 	const char *subsystem;
+	const char * driver;
 	int ib_ports = 0;
 	int rc = 0;
 
@@ -389,6 +413,12 @@ int udev_handle_device(struct udev_device *udev_device) {
 	       for (int i = ib_port_first; i < ib_port_first + ib_ports; i++)
 		       rc = handle_device(udev_device, udev_parent, udev_lowest,
 					  i);
+	}
+
+	if (!strncmp(subsystem, "pci", 3)) {
+		driver = udev_device_get_driver(udev_device);
+		if (driver && !strncmp(driver, "ism", 3))
+			rc = handle_ism_device(udev_device);
 	}
 
 	if (rc)
@@ -415,6 +445,9 @@ int udev_scan_devices() {
 		return UDEV_MATCH_FAILED;
 
 	if (udev_enumerate_add_match_subsystem(udev_enum, "net"))
+		return UDEV_MATCH_FAILED;
+
+	if (udev_enumerate_add_match_subsystem(udev_enum, "pci"))
 		return UDEV_MATCH_FAILED;
 
 	if (udev_enumerate_scan_devices(udev_enum) < 0)
