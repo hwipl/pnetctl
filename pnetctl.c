@@ -590,7 +590,7 @@ void print_device(struct device *device) {
 		printf(" %6.6s", "");
 	}
 	if (device->parent_subsystem)
-		printf(" %5.5s", device->parent_subsystem);
+		printf("   %3.3s", device->parent_subsystem);
 	else
 		printf(" %5.5s", "n/a");
 	if (device->parent)
