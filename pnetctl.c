@@ -20,6 +20,10 @@
 #define IB_DEFAULT_PORT 1 /* default port for infiniband devices */
 #define DEV_TYPE_ISM "ism" /* device type for ISM devices */
 
+/* CCW device constants */
+#define CCW_CHPID_LEN 128 /* maximum chpid length */
+#define CCW_UTIL_PREFIX "/sys/devices/css0/chp0." /* util string path prefix */
+
 void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid);
 void set_pnetid_for_eth(const char *dev_name, const char* pnetid);
 
@@ -331,11 +335,43 @@ int find_pci_util_string(struct device *device) {
 	return 0;
 }
 
+/* helper for finding util strings of ccwgroup devices */
+int find_ccw_util_string(struct device *device) {
+	const char *udev_path = udev_device_get_syspath(device->udev_parent);
+	int util_path_len = strlen(CCW_UTIL_PREFIX) + CCW_CHPID_LEN +
+		strlen("/util_string") + 1;
+	int chpid_path_len = strlen(udev_path) + strlen("/chpid") + 1;
+	char util_string_path[util_path_len];
+	char chpid[CCW_CHPID_LEN + 1] = {0};
+	char chpid_path[chpid_path_len];
+	int count;
+	int fd;
+
+	/* try to read chpid */
+	snprintf(chpid_path, sizeof(chpid_path), "%s/chpid", udev_path);
+	fd = open(chpid_path, O_RDONLY);
+	if (fd == -1)
+		return -1;
+	count = read(fd, chpid, CCW_CHPID_LEN);
+	if (count <= 0)
+		return count;
+
+	/* try to read util string */
+	snprintf(util_string_path, sizeof(util_string_path), "%s%s/util_string",
+		 CCW_UTIL_PREFIX, chpid);
+	return read_util_string(util_string_path, device->pnetid);
+}
+
 /* try to find a util_string for the device and read the pnetid */
 int find_util_string(struct device *device) {
 	/* pci device */
 	if (device->parent_subsystem &&
 	    !strncmp(device->parent_subsystem, "pci", 3))
+		find_pci_util_string(device);
+
+	/* ccw group device */
+	if (device->parent_subsystem &&
+	    !strncmp(device->parent_subsystem, "ccwgroup", 8))
 		find_pci_util_string(device);
 
 	return 0;
