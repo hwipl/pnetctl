@@ -296,6 +296,7 @@ int read_util_string(const char *file, char *buffer) {
 	if (fd == -1)
 		return -1;
 	read_count = read(fd, read_buffer, SMC_MAX_PNETID_LEN);
+	close(fd);
 	if (read_count == -1)
 		return -1;
 
@@ -354,6 +355,7 @@ int find_ccw_util_string(struct device *device) {
 	if (fd == -1)
 		return -1;
 	count = read(fd, chpid, CCW_CHPID_LEN);
+	close(fd);
 	if (count <= 0)
 		return count;
 
