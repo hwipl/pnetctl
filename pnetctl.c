@@ -291,11 +291,6 @@ int read_util_string(const char *file, char *buffer) {
 	int fd;
 	int rc;
 
-	/* initialize ebcdic to ascii converter */
-	cd = iconv_open("ASCII", "CP500");
-	if (cd == (iconv_t) -1)
-		return -1;
-
 	/* open and read file to temporary buffer*/
 	fd  = open(file, O_RDONLY);
 	if (fd == -1)
@@ -304,9 +299,15 @@ int read_util_string(const char *file, char *buffer) {
 	if (read_count == -1)
 		return -1;
 
+	/* initialize ebcdic to ascii converter */
+	cd = iconv_open("ASCII", "CP500");
+	if (cd == (iconv_t) -1)
+		return -1;
+
 	/* convert pnetid from ebcdic to ascii; write to output buffer */
 	conv_count = SMC_MAX_PNETID_LEN;
 	rc = iconv(cd, &read_ptr, &read_count, &buffer, &conv_count);
+	iconv_close(cd);
 	if (rc == -1)
 		return -1;
 
