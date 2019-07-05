@@ -58,23 +58,25 @@ devices and pnetids found on your system. For example, the output could look
 like this:
 
 ```
-==============================================================
-Pnetid:          Type:           Name:  Port:          PCI-ID:
-==============================================================
+====================================================================
+Pnetid:          Type:           Name:  Port:  Bus:          Bus-ID:
+====================================================================
 TESTID
---------------------------------------------------------------
-                   net            eth1            0000:02:00.0
-                    ib          mlx5_0      1     0000:03:00.0
---------------------------------------------------------------
+--------------------------------------------------------------------
+                   net            eth1          pci     0000:02:00.0
+                    ib          mlx5_0      1   pci     0000:03:00.0
+--------------------------------------------------------------------
 n/a
---------------------------------------------------------------
-                   net            eth0            0000:01:00.0
-                   net              lo                     n/a
+--------------------------------------------------------------------
+                   net            eth0          pci     0000:01:00.0
+                   net              lo          n/a              n/a
 ```
 
 The *pnetid* column shows the pnetids found on your system. For each pnetid,
-you can see the devices with their *type*, *name*, *port* (for ib devices), and
-*PCI-ID* in the respective columns. The special pnetid *n/a* is used to display
-all devices without a pnetid. Supported device types are linux net devices
-(*net*) like, e.g., `lo` or `eth0` and infiniband devices (*ib*) like, e.g.,
-`mlx4_1` or `mlx5_0`.
+you can see the devices with their *type*, *name*, *port* (for ib devices),
+*bus*, and *bus-ID* in the respective columns. The special pnetid *n/a* is used
+to display all devices without a pnetid. Supported device types are linux net
+devices (*net*) like, e.g., `lo` or `eth0` and infiniband devices (*ib*) like,
+e.g., `mlx4_1` or `mlx5_0`. Supported buses are PCI and CCW (on the s390
+architecture). The bus-ID is a bus-specific identifier of the device: in case
+of a PCI device, it is a PCI-ID; for a CCW device, it is a CCW device ID.
