@@ -388,7 +388,7 @@ int find_util_string(struct device *device) {
 	/* ccw group device */
 	if (device->parent_subsystem &&
 	    !strncmp(device->parent_subsystem, "ccwgroup", 8))
-		find_pci_util_string(device);
+		find_ccw_util_string(device);
 
 	return 0;
 }
