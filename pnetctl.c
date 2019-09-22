@@ -305,6 +305,7 @@ int read_util_string(const char *file, char *buffer) {
 	int rc;
 
 	/* open and read file to temporary buffer*/
+	verbose("Reading util string from file \"%s\".\n", file);
 	fd  = open(file, O_RDONLY);
 	if (fd == -1)
 		return -1;
@@ -364,6 +365,7 @@ int find_ccw_util_string(struct device *device) {
 
 	/* try to read chpid */
 	snprintf(chpid_path, sizeof(chpid_path), "%s/chpid", udev_path);
+	verbose("Reading chpid from file \"%s\".\n", chpid_path);
 	fd = open(chpid_path, O_RDONLY);
 	if (fd == -1)
 		return -1;
@@ -371,6 +373,7 @@ int find_ccw_util_string(struct device *device) {
 	close(fd);
 	if (count <= 0)
 		return count;
+	verbose("Read chpid \"%s\" from file \"%s\".\n", chpid, chpid_path);
 
 	/* try to read util string */
 	snprintf(util_string_path, sizeof(util_string_path), "%s%s/util_string",
@@ -380,6 +383,9 @@ int find_ccw_util_string(struct device *device) {
 
 /* try to find a util_string for the device and read the pnetid */
 int find_util_string(struct device *device) {
+	verbose("Trying to find util_string for \"%s\" device \"%s\".\n",
+		device->parent_subsystem, device->name);
+
 	/* pci device */
 	if (device->parent_subsystem &&
 	    !strncmp(device->parent_subsystem, "pci", 3))
