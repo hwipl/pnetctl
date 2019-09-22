@@ -27,6 +27,19 @@
 void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid);
 void set_pnetid_for_eth(const char *dev_name, const char* pnetid);
 
+/* verbose output, disabled by default */
+int verbose_mode = 0;
+
+/* print verbose output to the screen if in verbose mode */
+void verbose(const char *format, ...) {
+	va_list args;
+
+	va_start(args, format);
+	if (verbose_mode)
+		vprintf(format, args);
+	va_end(args);
+}
+
 /*
  * ********************
  * *** NETLINK PART ***
@@ -708,6 +721,7 @@ void print_usage() {
 	       "-i <ib_dev>		Specify infiniband device\n"
 	       "-p <ib_port>		Specify infiniband port\n"
 	       "			(default: %d)\n"
+	       "-v			Print verbose output\n"
 	       "-h			Print this help\n",
 	       IB_DEFAULT_PORT
 	       );
@@ -725,7 +739,7 @@ int parse_cmd_line(int argc, char **argv) {
 	int c;
 
 	/* try to get all arguments */
-	while ((c = getopt (argc, argv, "a:fhi:n:p:r:")) != -1) {
+	while ((c = getopt (argc, argv, "a:fhi:n:p:r:v")) != -1) {
 		switch (c) {
 		case 'a':
 			add = 1;
@@ -746,6 +760,9 @@ int parse_cmd_line(int argc, char **argv) {
 			break;
 		case 'p':
 			ib_port = atoi(optarg);
+			break;
+		case 'v':
+			verbose_mode = 1;
 			break;
 		case 'h':
 			print_usage();
@@ -776,6 +793,12 @@ int parse_cmd_line(int argc, char **argv) {
 		if (!ib_device && !net_device)
 			goto fail;
 		nl_set_pnetid(pnetid, net_device, ib_device, ib_port);
+		return EXIT_SUCCESS;
+	}
+
+	if (verbose_mode) {
+		/* only verbose mode set, print devices in verbose mode */
+		print_device_table();
 		return EXIT_SUCCESS;
 	}
 
