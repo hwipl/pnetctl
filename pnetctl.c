@@ -736,6 +736,7 @@ int parse_cmd_line(int argc, char **argv) {
 	int remove = 0;
 	int flush = 0;
 	int add = 0;
+	int rc;
 	int c;
 
 	/* try to get all arguments */
@@ -778,7 +779,9 @@ int parse_cmd_line(int argc, char **argv) {
 
 	if (flush) {
 		/* flush all pnetids and quit */
+		nl_init();
 		nl_flush_pnetids();
+		nl_cleanup();
 		return EXIT_SUCCESS;
 	}
 
@@ -792,28 +795,17 @@ int parse_cmd_line(int argc, char **argv) {
 		/* add a pnetid entry */
 		if (!ib_device && !net_device)
 			goto fail;
+		nl_init();
 		nl_set_pnetid(pnetid, net_device, ib_device, ib_port);
+		nl_cleanup();
 		return EXIT_SUCCESS;
 	}
 
-	if (verbose_mode) {
-		/* only verbose mode set, print devices in verbose mode */
-		print_device_table();
-		return EXIT_SUCCESS;
-	}
-
-	/* nothing done */
-	// TODO: print_device_table(); instead?
-	print_usage();
-	return EXIT_SUCCESS;
-fail:
-	print_usage();
-	return EXIT_FAILURE;
-}
-
-/* main function */
-int main(int argc, char **argv) {
-	int rc;
+	/* No special commands, print device table to screen if there was
+	 * no command line argument or if we are in verbose mode
+	 */
+	if (argc > 1 && !verbose_mode)
+		goto fail;
 
 	/* get all devices via udev and put them in devices list */
 	rc = udev_scan_devices();
@@ -824,17 +816,22 @@ int main(int argc, char **argv) {
 	nl_init();
 	nl_get_pnetids();
 
-	if (argc > 1) {
-		/* there are extra arguments, parse them */
-		parse_cmd_line(argc, argv);
-	} else {
-		/* no extra arguments, just print devices to terminal */
-		print_device_table();
-	}
-
-	/* cleanup netlink and free devices in devices list */
+	/* print devices to the screen, cleanup, and exit */
+	print_device_table();
 	nl_cleanup();
 	free_devices();
+	return EXIT_SUCCESS;
+fail:
+	print_usage();
+	return EXIT_FAILURE;
+}
 
-	exit(EXIT_SUCCESS);
+/* main function */
+int main(int argc, char **argv) {
+	int rc;
+
+	/* parse command line arguments and run everything else from there */
+	rc = parse_cmd_line(argc, argv);
+
+	exit(rc);
 }
