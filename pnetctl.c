@@ -241,6 +241,7 @@ void free_devices() {
 	struct device *next;
 	struct device *cur;
 
+	verbose("Freeing devices in device table.\n");
 	next = get_next_device(&devices_list);
 	while (next) {
 		// TODO: also free udev devices?
@@ -262,6 +263,8 @@ void set_pnetid_for_eth(const char *dev_name, const char* pnetid) {
 			    !strcmp(next->lowest, dev_name)) {
 				strncpy(next->pnetid, pnetid,
 					SMC_MAX_PNETID_LEN);
+				verbose("Set pnetid of net device \"%s\" "
+					"to \"%s\".\n", dev_name, pnetid);
 			}
 
 		}
@@ -281,6 +284,8 @@ void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid) {
 			    next->ib_port == dev_port) {
 				strncpy(next->pnetid, pnetid,
 					SMC_MAX_PNETID_LEN);
+				verbose("Set pnetid of ib device \"%s\" "
+					"to \"%s\".\n", dev_name, pnetid);
 			}
 
 		}
@@ -437,6 +442,7 @@ struct device *_handle_device(struct udev_device *udev_device,
 	device->parent_subsystem = udev_device_get_subsystem(udev_parent);
 	device->lowest = udev_device_get_sysname(udev_lowest);
 	device->ib_port = ib_port;
+	verbose("Added device \"%s\" to device table.\n", device->name);
 
 	/* try to initialize pnetid from util_string */
 	find_util_string(device);
@@ -597,6 +603,7 @@ int udev_scan_devices() {
 	if (udev_enumerate_add_match_subsystem(udev_enum, "pci"))
 		return UDEV_MATCH_FAILED;
 
+	verbose("Scanning devices with udev.\n");
 	if (udev_enumerate_scan_devices(udev_enum) < 0)
 		return UDEV_SCAN_FAILED;
 
