@@ -373,6 +373,7 @@ int find_ccw_util_string(struct device *device) {
 	close(fd);
 	if (count <= 0)
 		return count;
+	chpid[strcspn(chpid, "\r\n")] = 0;
 	verbose("Read chpid \"%s\" from file \"%s\".\n", chpid, chpid_path);
 
 	/* try to read util string */
