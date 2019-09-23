@@ -844,10 +844,10 @@ int parse_cmd_line(int argc, char **argv) {
 	/* try to receive pnetids via netlink */
 	nl_init();
 	nl_get_pnetids();
+	nl_cleanup();
 
 	/* print devices to the screen, cleanup, and exit */
 	print_device_table();
-	nl_cleanup();
 	free_devices();
 	return EXIT_SUCCESS;
 fail:
