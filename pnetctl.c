@@ -105,12 +105,14 @@ int nl_parse_msg(struct nl_msg *msg, void *arg) {
 
 /* flush all pnetids */
 void nl_flush_pnetids() {
+	verbose("Sending flush pnetids command over netlink socket.\n");
 	genl_send_simple(nl_sock, nl_family, SMC_PNETID_FLUSH, nl_version, 0);
 	nl_recvmsgs_default(nl_sock);
 }
 
 /* get all pnetids */
 void nl_get_pnetids() {
+	verbose("Sending get pnetids command over netlink socket.\n");
 	genl_send_simple(nl_sock, nl_family, SMC_PNETID_GET, nl_version,
 			 NLM_F_DUMP);
 	/* check reply */
@@ -128,16 +130,23 @@ void nl_set_pnetid(const char *pnet_name, const char *eth_name,
 	genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, nl_family, 0, NLM_F_REQUEST,
 		    SMC_PNETID_ADD, nl_version);
 	nla_put_string(msg, SMC_PNETID_NAME, pnet_name);
-	if (eth_name)
+	if (eth_name) {
 		nla_put_string(msg, SMC_PNETID_ETHNAME, eth_name);
+		verbose("Constructing netlink message to add pnetid \"%s\" "
+			"on net device \"%s\".\n", pnet_name, eth_name);
+	}
 	if (ib_name) {
 		nla_put_string(msg, SMC_PNETID_IBNAME, ib_name);
 		if (ib_port == -1)
 			ib_port = IB_DEFAULT_PORT;
 		nla_put_u8(msg, SMC_PNETID_IBPORT, ib_port);
+		verbose("Constructing netlink message to add pnetid \"%s\" "
+			"on ib device \"%s\" and port \"%d\".\n", pnet_name,
+			ib_name, ib_port);
 	}
 
 	/* send and free netlink message */
+	verbose("Sending add pnetid command over netlink socket.\n");
 	rc = nl_send_auto(nl_sock, msg);
 	if (rc < 0)
 		printf("Error sending request: %d\n", rc);
@@ -149,6 +158,7 @@ void nl_set_pnetid(const char *pnet_name, const char *eth_name,
 
 /* init netlink part */
 void nl_init() {
+	verbose("Initializing netlink socket.\n");
 	nl_sock = nl_socket_alloc();
 	nl_socket_modify_cb(nl_sock, NL_CB_VALID, NL_CB_CUSTOM, nl_parse_msg,
 			    NULL);
@@ -159,6 +169,7 @@ void nl_init() {
 
 /* cleanup netlink part */
 void nl_cleanup() {
+	verbose("Cleaning up netlink socket.\n");
 	nl_close(nl_sock);
 	nl_socket_free(nl_sock);
 }
