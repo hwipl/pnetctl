@@ -43,6 +43,7 @@ Options:
 -i <ib_dev>             Specify infiniband device
 -p <ib_port>            Specify infiniband port
                         (default: 1)
+-v                      Print verbose output
 -h                      Print this help
 ```
 
