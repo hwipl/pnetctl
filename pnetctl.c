@@ -803,11 +803,14 @@ int parse_cmd_line(int argc, char **argv) {
 	}
 
 	/* check for conflicting command line parameters */
-	if ((add && flush) || (add && remove) || (remove && flush))
+	if ((add && flush) || (add && remove) || (remove && flush)) {
+		verbose("Conflicting command line arguments.\n");
 		goto fail;
+	}
 
 	if (flush) {
 		/* flush all pnetids and quit */
+		verbose("Flushing all pnetids.\n");
 		nl_init();
 		nl_flush_pnetids();
 		nl_cleanup();
@@ -816,14 +819,19 @@ int parse_cmd_line(int argc, char **argv) {
 
 	if (remove) {
 		/* remove a specific pnetid */
+		verbose("Removing pnetid \"%s\".\n", pnetid);
 		// TODO: add pnetid removing
+		verbose("NOTE: removing specific pnetid not implemented!\n");
 		return EXIT_SUCCESS;
 	}
 
 	if (add) {
 		/* add a pnetid entry */
-		if (!ib_device && !net_device)
+		verbose("Adding pnetid \"%s\".\n", pnetid);
+		if (!ib_device && !net_device) {
+			verbose("Missing ib or net device.\n");
 			goto fail;
+		}
 		nl_init();
 		nl_set_pnetid(pnetid, net_device, ib_device, ib_port);
 		nl_cleanup();
@@ -837,16 +845,20 @@ int parse_cmd_line(int argc, char **argv) {
 		goto fail;
 
 	/* get all devices via udev and put them in devices list */
+	verbose("Trying to find devices and read their pnetids from "
+		"util_strings.\n");
 	rc = udev_scan_devices();
 	if (rc)
 		return rc;
 
 	/* try to receive pnetids via netlink */
+	verbose("Trying to read pnetids via netlink.\n");
 	nl_init();
 	nl_get_pnetids();
 	nl_cleanup();
 
 	/* print devices to the screen, cleanup, and exit */
+	verbose("Printing device table.\n");
 	print_device_table();
 	free_devices();
 	return EXIT_SUCCESS;
