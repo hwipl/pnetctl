@@ -326,6 +326,7 @@ int read_util_string(const char *file, char *buffer) {
 	if (rc == -1)
 		return -1;
 
+	verbose("Read util string \"%s\" from file \"%s\".\n", buffer, file);
 	return 0;
 }
 
@@ -335,6 +336,9 @@ int find_pci_util_string(struct device *device) {
 	int path_len = strlen(udev_path) + strlen("/util_string") + 1;
 	char util_string_path[path_len];
 	struct udev_list_entry *next;
+
+	verbose("Trying to find util_string for pci device \"%s\".\n",
+		device->name);
 
 	next = udev_device_get_sysattr_list_entry(device->udev_parent);
 	while (next) {
@@ -363,6 +367,9 @@ int find_ccw_util_string(struct device *device) {
 	int count;
 	int fd;
 
+	verbose("Trying to find util_string for ccw device \"%s\".\n",
+		device->name);
+
 	/* try to read chpid */
 	snprintf(chpid_path, sizeof(chpid_path), "%s/chpid", udev_path);
 	verbose("Reading chpid from file \"%s\".\n", chpid_path);
@@ -384,9 +391,6 @@ int find_ccw_util_string(struct device *device) {
 
 /* try to find a util_string for the device and read the pnetid */
 int find_util_string(struct device *device) {
-	verbose("Trying to find util_string for \"%s\" device \"%s\".\n",
-		device->parent_subsystem, device->name);
-
 	/* pci device */
 	if (device->parent_subsystem &&
 	    !strncmp(device->parent_subsystem, "pci", 3))
