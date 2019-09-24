@@ -86,6 +86,10 @@ int nl_parse_msg(struct nl_msg *msg, void *arg) {
 	}
 	if (attrs[SMC_PNETID_ETHNAME]) {
 		/* eth name is present in message */
+		verbose("Got netlink message with pnetid \"%s\" and eth name "
+			"\"%s\".\n",
+			nla_get_string(attrs[SMC_PNETID_NAME]),
+			nla_get_string(attrs[SMC_PNETID_ETHNAME]));
 		set_pnetid_for_eth(nla_get_string(attrs[SMC_PNETID_ETHNAME]),
 				   nla_get_string(attrs[SMC_PNETID_NAME]));
 	}
@@ -96,6 +100,11 @@ int nl_parse_msg(struct nl_msg *msg, void *arg) {
 			printf("Error retrieving netlink IB attributes\n");
 			return NL_OK;
 		}
+		verbose("Got netlink message with pnetid \"%s\", ib name "
+			"\"%s\", and ib port \"%d\".\n",
+			nla_get_string(attrs[SMC_PNETID_NAME]),
+			nla_get_string(attrs[SMC_PNETID_IBNAME]),
+			nla_get_u8(attrs[SMC_PNETID_IBPORT]));
 		set_pnetid_for_ib(nla_get_string(attrs[SMC_PNETID_IBNAME]),
 				  nla_get_u8(attrs[SMC_PNETID_IBPORT]),
 				  nla_get_string(attrs[SMC_PNETID_NAME]));
