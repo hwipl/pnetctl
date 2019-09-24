@@ -165,6 +165,30 @@ void nl_set_pnetid(const char *pnet_name, const char *eth_name,
 	nl_recvmsgs_default(nl_sock);
 }
 
+/* delete a pnetid */
+void nl_del_pnetid(const char *pnet_name) {
+	struct nl_msg* msg;
+	int rc;
+
+	/* construct netlink message */
+	verbose("Constructing netlink message to delete pnetid \"%s\".\n",
+		pnet_name);
+	msg = nlmsg_alloc();
+	genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, nl_family, 0, NLM_F_REQUEST,
+		    SMC_PNETID_DEL, nl_version);
+	nla_put_string(msg, SMC_PNETID_NAME, pnet_name);
+
+	/* send and free netlink message */
+	verbose("Sending delete pnetid command over netlink socket.\n");
+	rc = nl_send_auto(nl_sock, msg);
+	if (rc < 0)
+		printf("Error sending request: %d\n", rc);
+	nlmsg_free(msg);
+
+	/* check reply */
+	nl_recvmsgs_default(nl_sock);
+}
+
 /* init netlink part */
 void nl_init() {
 	verbose("Initializing netlink socket.\n");
@@ -830,8 +854,9 @@ int parse_cmd_line(int argc, char **argv) {
 	if (remove) {
 		/* remove a specific pnetid */
 		verbose("Removing pnetid \"%s\".\n", pnetid);
-		// TODO: add pnetid removing
-		verbose("NOTE: removing specific pnetid not implemented!\n");
+		nl_init();
+		nl_del_pnetid(pnetid);
+		nl_cleanup();
 		return EXIT_SUCCESS;
 	}
 
