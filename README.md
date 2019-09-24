@@ -39,9 +39,9 @@ Options:
 -a <pnetid>             Add pnetid. Requires -n or -i
 -r <pnetid>             Remove pnetid
 -f                      Flush pnetids
--n <net_dev>            Specify net device
--i <ib_dev>             Specify infiniband device
--p <ib_port>            Specify infiniband port
+-n <name>               Specify net device
+-i <name>               Specify infiniband or ism device
+-p <port>               Specify infiniband port
                         (default: 1)
 -v                      Print verbose output
 -h                      Print this help
@@ -49,7 +49,7 @@ Options:
 
 Running pnetctl without command line argument prints all devices and their
 pnetids found on your system. Command line arguments can be used to add,
-remove, and flush pnetids.
+remove, and flush pnetids as well as turning on verbose mode.
 
 
 ## Output
