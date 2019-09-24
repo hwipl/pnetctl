@@ -780,9 +780,9 @@ void print_usage() {
 	       "-a <pnetid>		Add pnetid. Requires -n or -i\n"
 	       "-r <pnetid>		Remove pnetid\n"
 	       "-f			Flush pnetids\n"
-	       "-n <net_dev>		Specify net device\n"
-	       "-i <ib_dev>		Specify infiniband device\n"
-	       "-p <ib_port>		Specify infiniband port\n"
+	       "-n <name>		Specify net device\n"
+	       "-i <name>		Specify infiniband or ism device\n"
+	       "-p <port>		Specify infiniband port\n"
 	       "			(default: %d)\n"
 	       "-v			Print verbose output\n"
 	       "-h			Print this help\n",
