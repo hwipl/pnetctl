@@ -280,7 +280,8 @@ void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid) {
 	while (next) {
 		if (!strncmp(next->subsystem, "infiniband", 10)) {
 			// TODO: use strncmp?
-			if (!strcmp(next->name, dev_name) &&
+			if ((!strcmp(next->name, dev_name) ||
+			     !strcmp (next->parent, dev_name)) &&
 			    next->ib_port == dev_port) {
 				strncpy(next->pnetid, pnetid,
 					SMC_MAX_PNETID_LEN);
