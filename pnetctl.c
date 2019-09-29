@@ -790,6 +790,15 @@ void print_usage() {
 	       );
 }
 
+/* run the "flush" command to remove all pnetid entries */
+int run_flush_command() {
+	/* remove entries via netlink */
+	nl_init();
+	nl_flush_pnetids();
+	nl_cleanup();
+	return EXIT_SUCCESS;
+}
+
 /* parse command line arguments and call other functions */
 int parse_cmd_line(int argc, char **argv) {
 	char *net_device = NULL;
@@ -845,10 +854,7 @@ int parse_cmd_line(int argc, char **argv) {
 	if (flush) {
 		/* flush all pnetids and quit */
 		verbose("Flushing all pnetids.\n");
-		nl_init();
-		nl_flush_pnetids();
-		nl_cleanup();
-		return EXIT_SUCCESS;
+		return run_flush_command();
 	}
 
 	if (remove) {
