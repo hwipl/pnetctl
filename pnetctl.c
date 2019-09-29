@@ -825,6 +825,30 @@ int run_add_command(const char *pnetid, const char *net_device,
 	return EXIT_SUCCESS;
 }
 
+/* run the "get" command to get devices and pnetids */
+int run_get_command() {
+	int rc;
+
+	/* get all devices via udev and put them in devices list */
+	verbose("Trying to find devices and read their pnetids from "
+		"util_strings.\n");
+	rc = udev_scan_devices();
+	if (rc)
+		return rc;
+
+	/* try to receive pnetids via netlink */
+	verbose("Trying to read pnetids via netlink.\n");
+	nl_init();
+	nl_get_pnetids();
+	nl_cleanup();
+
+	/* print devices to the screen, cleanup, and exit */
+	verbose("Printing device table.\n");
+	print_device_table();
+	free_devices();
+	return EXIT_SUCCESS;
+}
+
 /* parse command line arguments and call other functions */
 int parse_cmd_line(int argc, char **argv) {
 	char *net_device = NULL;
@@ -834,7 +858,6 @@ int parse_cmd_line(int argc, char **argv) {
 	int remove = 0;
 	int flush = 0;
 	int add = 0;
-	int rc;
 	int c;
 
 	/* try to get all arguments */
@@ -898,27 +921,11 @@ int parse_cmd_line(int argc, char **argv) {
 	/* No special commands, print device table to screen if there was
 	 * no command line argument or if we are in verbose mode
 	 */
-	if (argc > 1 && !verbose_mode)
-		goto fail;
-
-	/* get all devices via udev and put them in devices list */
-	verbose("Trying to find devices and read their pnetids from "
-		"util_strings.\n");
-	rc = udev_scan_devices();
-	if (rc)
-		return rc;
-
-	/* try to receive pnetids via netlink */
-	verbose("Trying to read pnetids via netlink.\n");
-	nl_init();
-	nl_get_pnetids();
-	nl_cleanup();
-
-	/* print devices to the screen, cleanup, and exit */
-	verbose("Printing device table.\n");
-	print_device_table();
-	free_devices();
-	return EXIT_SUCCESS;
+	if (argc == 1 || verbose_mode) {
+		/* get all devices and pnetids */
+		verbose("Getting all devices and pnetids.\n");
+		return run_get_command();
+	}
 fail:
 	print_usage();
 	return EXIT_FAILURE;
