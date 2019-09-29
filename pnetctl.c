@@ -808,6 +808,23 @@ int run_del_command(const char *pnetid) {
 	return EXIT_SUCCESS;
 }
 
+/* run the "add" command to add a pnetid entry */
+int run_add_command(const char *pnetid, const char *net_device,
+		    const char *ib_device, int ib_port) {
+	/* at least one device must be present */
+	if (!ib_device && !net_device) {
+		verbose("Missing ib or net device.\n");
+		print_usage();
+		return EXIT_FAILURE;
+	}
+
+	/* add entry via netlink */
+	nl_init();
+	nl_set_pnetid(pnetid, net_device, ib_device, ib_port);
+	nl_cleanup();
+	return EXIT_SUCCESS;
+}
+
 /* parse command line arguments and call other functions */
 int parse_cmd_line(int argc, char **argv) {
 	char *net_device = NULL;
@@ -875,14 +892,7 @@ int parse_cmd_line(int argc, char **argv) {
 	if (add) {
 		/* add a pnetid entry */
 		verbose("Adding pnetid \"%s\".\n", pnetid);
-		if (!ib_device && !net_device) {
-			verbose("Missing ib or net device.\n");
-			goto fail;
-		}
-		nl_init();
-		nl_set_pnetid(pnetid, net_device, ib_device, ib_port);
-		nl_cleanup();
-		return EXIT_SUCCESS;
+		return run_add_command(pnetid, net_device, ib_device, ib_port);
 	}
 
 	/* No special commands, print device table to screen if there was
