@@ -30,6 +30,9 @@ void set_pnetid_for_eth(const char *dev_name, const char* pnetid);
 /* verbose output, disabled by default */
 int verbose_mode = 0;
 
+/* pnetid filter when printing the device table */
+const char *pnetid_filter = NULL;
+
 /* print verbose output to the screen if in verbose mode */
 void verbose(const char *format, ...) {
 	va_list args;
@@ -735,6 +738,18 @@ void print_device_table() {
 				next = get_next_device(next);
 				continue;
 			}
+
+			/* if pnetid filter is active, only show this pnetid */
+			if (pnetid_filter) {
+				if (!strncmp(next->pnetid, pnetid_filter,
+					     SMC_MAX_PNETID_LEN)) {
+					print_device(next);
+					next->output = 1;
+				}
+				next = get_next_device(next);
+				continue;
+			}
+
 			if (pnetid_found) {
 				/* another device with same pnetid? */
 				if (!strncmp(next->pnetid, pnetid,
@@ -742,21 +757,25 @@ void print_device_table() {
 					print_device(next);
 					next->output = 1;
 				}
-			} else {
-				/* found new pnetid in list */
-				pnetid_found = 1;
-				pnetid = next->pnetid;
-				print_pnetid(pnetid);
-				print_device(next);
-				next->output = 1;
+				next = get_next_device(next);
+				continue;
 			}
+
+			/* found new pnetid in list */
+			pnetid_found = 1;
+			pnetid = next->pnetid;
+			print_pnetid(pnetid);
+			print_device(next);
+			next->output = 1;
 			next = get_next_device(next);
 		}
-		if (pnetid_found)
+		if (pnetid_found && !pnetid_filter)
 			print_line();
 	}
 
 	/* print remaining devices */
+	if (pnetid_filter)
+		return;
 	print_pnetid("n/a");
 	next = get_next_device(&devices_list);
 	while (next) {
@@ -779,6 +798,7 @@ void print_usage() {
 	       "------------------------------------------------------------\n"
 	       "-a <pnetid>		Add pnetid. Requires -n or -i\n"
 	       "-r <pnetid>		Remove pnetid\n"
+	       "-g <pnetid>		Get devices with pnetid\n"
 	       "-f			Flush pnetids\n"
 	       "-n <name>		Specify net device\n"
 	       "-i <name>		Specify infiniband or ism device\n"
@@ -858,10 +878,11 @@ int parse_cmd_line(int argc, char **argv) {
 	int remove = 0;
 	int flush = 0;
 	int add = 0;
+	int get = 0;
 	int c;
 
 	/* try to get all arguments */
-	while ((c = getopt (argc, argv, "a:fhi:n:p:r:v")) != -1) {
+	while ((c = getopt (argc, argv, "a:fhi:n:p:r:g:v")) != -1) {
 		switch (c) {
 		case 'a':
 			add = 1;
@@ -872,6 +893,10 @@ int parse_cmd_line(int argc, char **argv) {
 			break;
 		case 'r':
 			remove = 1;
+			pnetid = optarg;
+			break;
+		case 'g':
+			get = 1;
 			pnetid = optarg;
 			break;
 		case 'n':
@@ -895,7 +920,8 @@ int parse_cmd_line(int argc, char **argv) {
 	}
 
 	/* check for conflicting command line parameters */
-	if ((add && flush) || (add && remove) || (remove && flush)) {
+	if ((add && flush) || (add && remove) || (remove && flush) ||
+	    (get && add) || (get && remove) || (get && flush)) {
 		verbose("Conflicting command line arguments.\n");
 		goto fail;
 	}
@@ -916,6 +942,13 @@ int parse_cmd_line(int argc, char **argv) {
 		/* add a pnetid entry */
 		verbose("Adding pnetid \"%s\".\n", pnetid);
 		return run_add_command(pnetid, net_device, ib_device, ib_port);
+	}
+
+	if (get) {
+		/* get a specific pnetid */
+		verbose("Getting devices with pnetid \"%s\".\n", pnetid);
+		pnetid_filter = pnetid;
+		return run_get_command();
 	}
 
 	/* No special commands, print device table to screen if there was
