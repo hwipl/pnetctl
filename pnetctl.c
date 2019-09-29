@@ -799,6 +799,15 @@ int run_flush_command() {
 	return EXIT_SUCCESS;
 }
 
+/* run the "remove"/"del" command to remove a pnetid entry */
+int run_del_command(const char *pnetid) {
+	/* remove entry via netlink */
+	nl_init();
+	nl_del_pnetid(pnetid);
+	nl_cleanup();
+	return EXIT_SUCCESS;
+}
+
 /* parse command line arguments and call other functions */
 int parse_cmd_line(int argc, char **argv) {
 	char *net_device = NULL;
@@ -860,10 +869,7 @@ int parse_cmd_line(int argc, char **argv) {
 	if (remove) {
 		/* remove a specific pnetid */
 		verbose("Removing pnetid \"%s\".\n", pnetid);
-		nl_init();
-		nl_del_pnetid(pnetid);
-		nl_cleanup();
-		return EXIT_SUCCESS;
+		return run_del_command(pnetid);
 	}
 
 	if (add) {
