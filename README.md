@@ -6,6 +6,7 @@ protocol](https://www.rfc-editor.org/info/rfc7609) implementation in Linux uses
 pnetids to determine which network and infiniband devices are attached to the
 same physical network and, thus, can be used together for SMC connections.
 
+
 ## Installation
 
 In order to compile, install, and use pnetctl, you need to have its
@@ -82,3 +83,9 @@ devices (*net*) like, e.g., `lo` or `eth0` and infiniband devices (*ib*) like,
 e.g., `mlx4_1` or `mlx5_0`. Supported buses are PCI and CCW (on the s390
 architecture). The bus-ID is a bus-specific identifier of the device: in case
 of a PCI device, it is a PCI-ID; for a CCW device, it is a CCW device ID.
+
+
+## Changes
+
+* v0.1:
+  * First/initial release.
