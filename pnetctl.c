@@ -115,6 +115,12 @@ int nl_parse_msg(struct nl_msg *msg, void *arg) {
 	return NL_OK;
 }
 
+/* receive and parse netlink error messages */
+int nl_parse_error(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *arg) {
+	printf("Netlink error: %s\n", strerror(-nlerr->error));
+	return NL_STOP;
+}
+
 /* flush all pnetids */
 void nl_flush_pnetids() {
 	verbose("Sending flush pnetids command over netlink socket.\n");
@@ -194,10 +200,13 @@ void nl_del_pnetid(const char *pnet_name) {
 
 /* init netlink part */
 void nl_init() {
+	struct nl_cb *cb;
+
 	verbose("Initializing netlink socket.\n");
 	nl_sock = nl_socket_alloc();
-	nl_socket_modify_cb(nl_sock, NL_CB_VALID, NL_CB_CUSTOM, nl_parse_msg,
-			    NULL);
+	cb = nl_socket_get_cb(nl_sock);
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, nl_parse_msg, NULL);
+	nl_cb_err(cb, NL_CB_CUSTOM, nl_parse_error, NULL);
 	genl_connect(nl_sock);
 	nl_family = genl_ctrl_resolve(nl_sock, SMCR_GENL_FAMILY_NAME);
 	nl_version = SMCR_GENL_FAMILY_VERSION;
