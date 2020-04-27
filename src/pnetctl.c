@@ -9,9 +9,6 @@
 #include "devices.h"
 #include "udev.h"
 
-void set_pnetid_for_ib(const char *dev_name, int dev_port, const char* pnetid);
-void set_pnetid_for_eth(const char *dev_name, const char* pnetid);
-
 /* verbose output, disabled by default */
 int verbose_mode = 0;
 
