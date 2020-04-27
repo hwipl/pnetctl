@@ -14,6 +14,7 @@
 #include <netlink/attr.h>
 
 #include "pnetctl.h"
+#include "devices.h"
 
 struct nl_sock *nl_sock;
 int nl_version;
