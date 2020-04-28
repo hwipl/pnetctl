@@ -49,3 +49,10 @@ test('cli: flush verbose', exe, args : ['-v', '-f'],
   is_parallel : false, priority : -260)
 test('cli: get all verbose', exe, args : ['-v'],
   is_parallel : false, priority : -270)
+
+# devices unit test
+devices_test_src = ['src/devices_test.c', 'src/devices.c', 'src/pnetctl.c',
+  'src/netlink.c', 'src/udev.c']
+devices_test_exe = executable('devices_test', dependencies : pnetctldep,
+  sources : devices_test_src)
+test('devices test', devices_test_exe)
