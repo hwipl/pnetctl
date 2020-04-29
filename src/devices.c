@@ -48,6 +48,7 @@ void free_devices() {
 		next = get_next_device(next);
 		free(cur);
 	}
+	devices_list.next = NULL;
 }
 
 /* set pnetid for eth device */
