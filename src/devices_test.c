@@ -47,6 +47,20 @@ int test_set_pnetid_for_eth() {
 	return 0;
 }
 
+// test the function set_pnetid_for_ib()
+int test_set_pnetid_for_ib() {
+	struct device *device = new_device();
+	device->name = "mlx5_1";
+	device->subsystem = "infiniband";
+	device->ib_port = 1;
+	set_pnetid_for_ib("mlx5_1", 1, "PNETID");
+	if (strncmp(device->pnetid, "PNETID", sizeof(device->pnetid))) {
+	    return -1;
+	}
+	free_devices();
+	return 0;
+}
+
 int main() {
 	int rc;
 
@@ -59,6 +73,10 @@ int main() {
 		return rc;
 	}
 	rc = test_set_pnetid_for_eth();
+	if (rc) {
+		return rc;
+	}
+	rc = test_set_pnetid_for_ib();
 	if (rc) {
 		return rc;
 	}
