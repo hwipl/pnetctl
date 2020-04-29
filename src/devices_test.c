@@ -2,6 +2,8 @@
  * test for devices
  */
 
+#include <string.h>
+
 #include "devices.h"
 
 // test the function new_device()
@@ -32,6 +34,19 @@ int test_get_next_device() {
 	return 0;
 }
 
+// test the function set_pnetid_for_eth()
+int test_set_pnetid_for_eth() {
+	struct device *device = new_device();
+	device->name = "lo";
+	device->subsystem = "net";
+	set_pnetid_for_eth("lo", "PNETID");
+	if (strncmp(device->pnetid, "PNETID", sizeof(device->pnetid))) {
+	    return -1;
+	}
+	free_devices();
+	return 0;
+}
+
 int main() {
 	int rc;
 
@@ -40,6 +55,10 @@ int main() {
 		return rc;
 	}
 	rc = test_get_next_device();
+	if (rc) {
+		return rc;
+	}
+	rc = test_set_pnetid_for_eth();
 	if (rc) {
 		return rc;
 	}
