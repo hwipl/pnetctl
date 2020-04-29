@@ -51,8 +51,35 @@ test('cli: get all verbose', exe, args : ['-v'],
   is_parallel : false, priority : -270)
 
 # devices unit test
-devices_test_src = ['src/devices_test.c', 'src/devices.c', 'src/pnetctl.c',
-  'src/netlink.c', 'src/udev.c']
-devices_test_exe = executable('devices_test', dependencies : pnetctldep,
-  sources : devices_test_src)
-test('devices test', devices_test_exe)
+devices_test_src = [
+  'src/devices_test.c',
+  'src/devices.c',
+  'src/pnetctl.c',
+  'src/netlink.c',
+  'src/udev.c'
+]
+devices_test_exe = executable(
+  'devices_test',
+  dependencies : pnetctldep,
+  sources : devices_test_src
+)
+test('new_device',
+  devices_test_exe,
+  args : ['new_device'],
+  suite : 'devices')
+test('get_next_device',
+  devices_test_exe,
+  args : ['get_next_device'],
+  suite : 'devices')
+test('set_pnetid_for_eth',
+  devices_test_exe,
+  args : ['set_pnetid_for_eth'],
+  suite : 'devices')
+test('set_pnetid_for_ib',
+  devices_test_exe,
+  args : ['set_pnetid_for_ib'],
+  suite : 'devices')
+test('free_devices',
+  devices_test_exe,
+  args : ['free_devices'],
+  suite : 'devices')
