@@ -141,3 +141,33 @@ test('free_devices',
   devices_test_exe,
   args : ['free_devices'],
   suite : 'devices')
+
+# netlink tests
+netlink_test_exe = executable('netlink_test',
+  sources : ['src/netlink_test.c'] + pnetctlsrc,
+  dependencies : pnetctldep)
+
+test('nl_init',
+  netlink_test_exe,
+  args : ['nl_init'],
+  suite : 'netlink')
+test('nl_cleanup',
+  netlink_test_exe,
+  args : ['nl_cleanup'],
+  suite : 'netlink')
+test('nl_flush_pnetids',
+  netlink_test_exe,
+  args : ['nl_flush_pnetids'],
+  suite : 'netlink')
+test('nl_del_pnetid',
+  netlink_test_exe,
+  args : ['nl_del_pnetid'],
+  suite : 'netlink')
+test('nl_set_pnetid',
+  netlink_test_exe,
+  args : ['nl_set_pnetid'],
+  suite : 'netlink')
+test('nl_get_pnetids',
+  netlink_test_exe,
+  args : ['nl_get_pnetids'],
+  suite : 'netlink')
