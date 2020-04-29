@@ -3,10 +3,9 @@ cc = meson.get_compiler('c')
 pnetctldep = [dependency('libudev'),
               dependency('libnl-3.0'),
               dependency('libnl-genl-3.0')]
-pnetctlsrc = ['src/main.c','src/pnetctl.c', 'src/netlink.c', 'src/devices.c',
-              'src/udev.c']
+pnetctlsrc = ['src/pnetctl.c', 'src/netlink.c', 'src/devices.c', 'src/udev.c']
 exe = executable('pnetctl',
-           sources : pnetctlsrc,
+           sources : ['src/main.c'] + pnetctlsrc,
            dependencies : pnetctldep,
            install : true)
 
@@ -117,19 +116,11 @@ test('get all verbose',
   priority : -270,
   suite : 'cli')
 
-# devices unit test
-devices_test_src = [
-  'src/devices_test.c',
-  'src/devices.c',
-  'src/pnetctl.c',
-  'src/netlink.c',
-  'src/udev.c'
-]
-devices_test_exe = executable(
-  'devices_test',
-  dependencies : pnetctldep,
-  sources : devices_test_src
-)
+# devices tests
+devices_test_exe = executable('devices_test',
+  sources : ['src/devices_test.c'] + pnetctlsrc,
+  dependencies : pnetctldep)
+
 test('new_device',
   devices_test_exe,
   args : ['new_device'],
