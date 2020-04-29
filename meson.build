@@ -171,3 +171,13 @@ test('nl_get_pnetids',
   netlink_test_exe,
   args : ['nl_get_pnetids'],
   suite : 'netlink')
+
+# udev tests
+udev_test_exe = executable('udev_test',
+  sources : ['src/udev_test.c'] + pnetctlsrc,
+  dependencies : pnetctldep)
+
+test('udev_scan_devices',
+  udev_test_exe,
+  args : ['udev_scan_devices'],
+  suite : 'udev')
