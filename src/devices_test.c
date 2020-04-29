@@ -3,6 +3,7 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 
 #include "devices.h"
 
@@ -77,27 +78,42 @@ int test_free_devices() {
 	return 0;
 }
 
-int main() {
+struct test {
+	const char *name;
+	int (* func)();
+};
+
+struct test tests[] = {
+	{"new_device", test_new_device},
+	{"get_next_device", test_get_next_device},
+	{"set_pnetid_for_eth", test_set_pnetid_for_eth},
+	{"set_pnetid_for_ib", test_set_pnetid_for_ib},
+	{"free_devices", test_free_devices},
+	{NULL, NULL},
+};
+
+int main(int argc, char** argv) {
 	int rc;
 
-	rc = test_new_device();
-	if (rc) {
-		return rc;
+	// no command line argument -> run all tests
+	if (argc == 1) {
+		for (int i=0; tests[i].name != NULL; i++) {
+			printf("Testing %s.\n", tests[i].name);
+			rc = tests[i].func();
+			if (rc) {
+				return rc;
+			}
+		}
+		return 0;
 	}
-	rc = test_get_next_device();
-	if (rc) {
-		return rc;
+
+	// run specific test given as first command line argument
+	for (int i=0; tests[i].name != NULL; i++) {
+		if (!strcmp(tests[i].name, argv[1])) {
+			printf("Testing %s.\n", tests[i].name);
+			return tests[i].func();
+		}
 	}
-	rc = test_set_pnetid_for_eth();
-	if (rc) {
-		return rc;
-	}
-	rc = test_set_pnetid_for_ib();
-	if (rc) {
-		return rc;
-	}
-	rc = test_free_devices();
-	if (rc) {
-		return rc;
-	}
+	printf("Test not found.\n");
+	return -1;
 }
