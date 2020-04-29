@@ -16,13 +16,30 @@ int test_new_device() {
 		}
 		next = get_next_device(next);
 	}
+
+	free_devices();
 	return -1;
+}
+
+// test the function get_next_device()
+int test_get_next_device() {
+	struct device *device;
+	device = get_next_device(&devices_list);
+	while (device) {
+		device = get_next_device(device);
+	}
+	free_devices();
+	return 0;
 }
 
 int main() {
 	int rc;
 
 	rc = test_new_device();
+	if (rc) {
+		return rc;
+	}
+	rc = test_get_next_device();
 	if (rc) {
 		return rc;
 	}
