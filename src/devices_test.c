@@ -61,6 +61,22 @@ int test_set_pnetid_for_ib() {
 	return 0;
 }
 
+// test the function free_devices()
+int test_free_devices() {
+	struct device *device = new_device();
+	device = get_next_device(&devices_list);
+	if (!device) {
+		return -1;
+	}
+	free_devices();
+	device = get_next_device(&devices_list);
+	if (device) {
+		return -1;
+	}
+	free_devices();
+	return 0;
+}
+
 int main() {
 	int rc;
 
@@ -77,6 +93,10 @@ int main() {
 		return rc;
 	}
 	rc = test_set_pnetid_for_ib();
+	if (rc) {
+		return rc;
+	}
+	rc = test_free_devices();
 	if (rc) {
 		return rc;
 	}
