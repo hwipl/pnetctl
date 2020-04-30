@@ -192,3 +192,13 @@ test('print_device_table',
   print_test_exe,
   args : ['print_device_table'],
   suite : 'print')
+
+# verbose tests
+verbose_test_exe = executable('verbose_test',
+  sources : ['src/verbose_test.c'] + pnetctlsrc,
+  dependencies : pnetctldep)
+
+test('verbose',
+  verbose_test_exe,
+  args : ['verbose'],
+  suite : 'verbose')
