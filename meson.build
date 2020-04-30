@@ -182,3 +182,13 @@ test('udev_scan_devices',
   udev_test_exe,
   args : ['udev_scan_devices'],
   suite : 'udev')
+
+# print tests
+print_test_exe = executable('print_test',
+  sources : ['src/print_test.c'] + pnetctlsrc,
+  dependencies : pnetctldep)
+
+test('print_device_table',
+  print_test_exe,
+  args : ['print_device_table'],
+  suite : 'print')
