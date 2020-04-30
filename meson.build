@@ -202,3 +202,13 @@ test('verbose',
   verbose_test_exe,
   args : ['verbose'],
   suite : 'verbose')
+
+# cmd tests
+cmd_test_exe = executable('cmd_test',
+  sources : ['src/cmd_test.c'] + pnetctlsrc,
+  dependencies : pnetctldep)
+
+test('parse_cmd_line',
+  cmd_test_exe,
+  args : ['parse_cmd_line'],
+  suite : 'cmd')
