@@ -7,10 +7,30 @@
 
 #include "test.h"
 #include "print.h"
+#include "common.h"
+#include "udev.h"
 
 // test the function print_device_table()
 int test_print_device_table() {
+	// empty device table, no filter
+	pnetid_filter = NULL;
 	print_device_table();
+
+	// empty device table, (not matching) filter
+	pnetid_filter = "DOES_NOT_MATCH";
+	print_device_table();
+
+	// fill device table
+	udev_scan_devices();
+
+	// filled device table, no filter
+	pnetid_filter = NULL;
+	print_device_table();
+
+	// filled device table, (not matching) filter
+	pnetid_filter = "DOES_NOT_MATCH";
+	print_device_table();
+
 	return 0;
 }
 
