@@ -1,5 +1,5 @@
 /*
- * test for devices
+ * test for udev
  */
 
 #include <string.h>
