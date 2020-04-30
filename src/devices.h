@@ -1,7 +1,7 @@
 #ifndef _PNETCTL_DEVICES_H
 #define _PNETCTL_DEVICES_H
 
-#include "pnetctl.h"
+#include "common.h"
 
 /* struct for devices */
 struct device {

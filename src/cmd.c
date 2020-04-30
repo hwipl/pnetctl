@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "pnetctl.h"
 #include "netlink.h"
 #include "devices.h"
 #include "udev.h"

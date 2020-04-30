@@ -13,7 +13,6 @@
 #include <netlink/socket.h>
 #include <netlink/attr.h>
 
-#include "pnetctl.h"
 #include "devices.h"
 #include "verbose.h"
 

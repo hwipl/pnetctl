@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "pnetctl.h"
 #include "devices.h"
 
 /* print a horizontal line on screen */

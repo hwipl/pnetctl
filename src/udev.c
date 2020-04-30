@@ -14,7 +14,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "pnetctl.h"
 #include "devices.h"
 #include "verbose.h"
 
