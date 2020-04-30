@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "devices.h"
+#include "verbose.h"
 
 /* get next device in devices list */
 struct device *get_next_device(struct device *device) {

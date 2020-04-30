@@ -5,6 +5,5 @@
 #define IB_DEFAULT_PORT 1 /* default port for infiniband devices */
 
 int parse_cmd_line(int argc, char **argv);
-void verbose(const char *format, ...);
 
 #endif

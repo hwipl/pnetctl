@@ -15,6 +15,7 @@
 
 #include "pnetctl.h"
 #include "devices.h"
+#include "verbose.h"
 
 struct nl_sock *nl_sock;
 int nl_version;

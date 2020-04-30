@@ -16,6 +16,7 @@
 
 #include "pnetctl.h"
 #include "devices.h"
+#include "verbose.h"
 
 #define DEV_TYPE_ISM "ism" /* device type for ISM devices */
 

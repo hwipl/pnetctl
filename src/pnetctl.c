@@ -2,28 +2,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <stdarg.h>
 
 #include "pnetctl.h"
 #include "netlink.h"
 #include "devices.h"
 #include "udev.h"
-
-/* verbose output, disabled by default */
-int verbose_mode = 0;
+#include "verbose.h"
 
 /* pnetid filter when printing the device table */
 const char *pnetid_filter = NULL;
 
-/* print verbose output to the screen if in verbose mode */
-void verbose(const char *format, ...) {
-	va_list args;
-
-	va_start(args, format);
-	if (verbose_mode)
-		vprintf(format, args);
-	va_end(args);
-}
 
 /*
  * *****************
