@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "test.h"
 #include "netlink.h"
 
 // test the function nl_init()
@@ -64,11 +65,6 @@ int test_nl_get_pnetids() {
 	return 0;
 }
 
-struct test {
-	const char *name;
-	int (* func)();
-};
-
 struct test tests[] = {
 	{"nl_init", test_nl_init},
 	{"nl_cleanup", test_nl_cleanup},
@@ -80,27 +76,9 @@ struct test tests[] = {
 };
 
 int main(int argc, char** argv) {
-	int rc;
-
-	// no command line argument -> run all tests
-	if (argc == 1) {
-		for (int i=0; tests[i].name != NULL; i++) {
-			printf("Testing %s.\n", tests[i].name);
-			rc = tests[i].func();
-			if (rc) {
-				return rc;
-			}
-		}
-		return 0;
+	const char *name = NULL;
+	if (argc > 1) {
+		name = argv[1];
 	}
-
-	// run specific test given as first command line argument
-	for (int i=0; tests[i].name != NULL; i++) {
-		if (!strcmp(tests[i].name, argv[1])) {
-			printf("Testing %s.\n", tests[i].name);
-			return tests[i].func();
-		}
-	}
-	printf("Test not found.\n");
-	return -1;
+	return run_test(tests, name);
 }

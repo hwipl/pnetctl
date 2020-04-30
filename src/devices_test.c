@@ -2,9 +2,7 @@
  * test for devices
  */
 
-#include <string.h>
-#include <stdio.h>
-
+#include "test.h"
 #include "devices.h"
 
 // test the function new_device()
@@ -79,11 +77,6 @@ int test_free_devices() {
 	return 0;
 }
 
-struct test {
-	const char *name;
-	int (* func)();
-};
-
 struct test tests[] = {
 	{"new_device", test_new_device},
 	{"get_next_device", test_get_next_device},
@@ -93,28 +86,10 @@ struct test tests[] = {
 	{NULL, NULL},
 };
 
-int main(int argc, char** argv) {
-	int rc;
-
-	// no command line argument -> run all tests
-	if (argc == 1) {
-		for (int i=0; tests[i].name != NULL; i++) {
-			printf("Testing %s.\n", tests[i].name);
-			rc = tests[i].func();
-			if (rc) {
-				return rc;
-			}
-		}
-		return 0;
+int main(int argc, char **argv) {
+	const char *name = NULL;
+	if (argc > 1) {
+		name = argv[1];
 	}
-
-	// run specific test given as first command line argument
-	for (int i=0; tests[i].name != NULL; i++) {
-		if (!strcmp(tests[i].name, argv[1])) {
-			printf("Testing %s.\n", tests[i].name);
-			return tests[i].func();
-		}
-	}
-	printf("Test not found.\n");
-	return -1;
+	return run_test(tests, name);
 }
