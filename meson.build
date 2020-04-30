@@ -3,7 +3,7 @@ cc = meson.get_compiler('c')
 pnetctldep = [dependency('libudev'),
               dependency('libnl-3.0'),
               dependency('libnl-genl-3.0')]
-pnetctlsrc = ['src/pnetctl.c', 'src/netlink.c', 'src/devices.c', 'src/udev.c',
+pnetctlsrc = ['src/cmd.c', 'src/netlink.c', 'src/devices.c', 'src/udev.c',
   'src/verbose.c', 'src/print.c']
 exe = executable('pnetctl',
            sources : ['src/main.c'] + pnetctlsrc,

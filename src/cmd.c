@@ -10,12 +10,6 @@
 #include "verbose.h"
 #include "print.h"
 
-/*
- * *****************
- * *** MAIN PART ***
- * *****************
- */
-
 /* print usage */
 void print_usage() {
 	printf("------------------------------------------------------------\n"

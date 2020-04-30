@@ -7,6 +7,4 @@
 /* pnetid filter when printing the device table */
 const char *pnetid_filter;
 
-int parse_cmd_line(int argc, char **argv);
-
 #endif

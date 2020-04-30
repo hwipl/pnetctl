@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "pnetctl.h"
+#include "cmd.h"
 
 /* main function */
 int main(int argc, char **argv) {
