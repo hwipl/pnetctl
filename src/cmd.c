@@ -105,7 +105,12 @@ int parse_cmd_line(int argc, char **argv) {
 	int get = 0;
 	int c;
 
+	/* reset global variables */
+	pnetid_filter = NULL;
+	verbose_mode = 0;
+
 	/* try to get all arguments */
+	optind = 1;
 	while ((c = getopt (argc, argv, "a:fhi:n:p:r:g:v")) != -1) {
 		switch (c) {
 		case 'a':
