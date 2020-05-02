@@ -1,14 +1,139 @@
 project('pnetctl', 'c')
-cc = meson.get_compiler('c')
-pnetctldep = [dependency('libudev'),
-              dependency('libnl-3.0'),
-              dependency('libnl-genl-3.0')]
-pnetctlsrc = ['src/cmd.c', 'src/netlink.c', 'src/devices.c', 'src/udev.c',
-  'src/verbose.c', 'src/print.c']
+pnetctl_dep = [
+  dependency('libnl-3.0'),
+  dependency('libnl-genl-3.0'),
+  dependency('libudev'),
+]
+pnetctl_src = [
+  'src/cmd.c',
+  'src/devices.c',
+  'src/netlink.c',
+  'src/print.c',
+  'src/udev.c',
+  'src/verbose.c',
+]
 exe = executable('pnetctl',
-           sources : ['src/main.c'] + pnetctlsrc,
-           dependencies : pnetctldep,
-           install : true)
+  sources : ['src/main.c'] + pnetctl_src,
+  dependencies : pnetctl_dep,
+  install : true)
+
+# #############
+# # cmd tests #
+# #############
+
+cmd_test_exe = executable('cmd_test',
+  sources : ['src/cmd_test.c'] + pnetctl_src,
+  dependencies : pnetctl_dep)
+
+test('parse_cmd_line',
+  cmd_test_exe,
+  args : ['parse_cmd_line'],
+  suite : 'cmd')
+
+# #################
+# # devices tests #
+# #################
+
+devices_test_exe = executable('devices_test',
+  sources : ['src/devices_test.c'] + pnetctl_src,
+  dependencies : pnetctl_dep)
+
+test('new_device',
+  devices_test_exe,
+  args : ['new_device'],
+  suite : 'devices')
+test('get_next_device',
+  devices_test_exe,
+  args : ['get_next_device'],
+  suite : 'devices')
+test('set_pnetid_for_eth',
+  devices_test_exe,
+  args : ['set_pnetid_for_eth'],
+  suite : 'devices')
+test('set_pnetid_for_ib',
+  devices_test_exe,
+  args : ['set_pnetid_for_ib'],
+  suite : 'devices')
+test('free_devices',
+  devices_test_exe,
+  args : ['free_devices'],
+  suite : 'devices')
+
+# #################
+# # netlink tests #
+# #################
+
+netlink_test_exe = executable('netlink_test',
+  sources : ['src/netlink_test.c'] + pnetctl_src,
+  dependencies : pnetctl_dep)
+
+test('nl_init',
+  netlink_test_exe,
+  args : ['nl_init'],
+  suite : 'netlink')
+test('nl_cleanup',
+  netlink_test_exe,
+  args : ['nl_cleanup'],
+  suite : 'netlink')
+test('nl_flush_pnetids',
+  netlink_test_exe,
+  args : ['nl_flush_pnetids'],
+  suite : 'netlink')
+test('nl_del_pnetid',
+  netlink_test_exe,
+  args : ['nl_del_pnetid'],
+  suite : 'netlink')
+test('nl_set_pnetid',
+  netlink_test_exe,
+  args : ['nl_set_pnetid'],
+  suite : 'netlink')
+test('nl_get_pnetids',
+  netlink_test_exe,
+  args : ['nl_get_pnetids'],
+  suite : 'netlink')
+
+# ###############
+# # print tests #
+# ###############
+
+print_test_exe = executable('print_test',
+  sources : ['src/print_test.c'] + pnetctl_src,
+  dependencies : pnetctl_dep)
+
+test('print_device_table',
+  print_test_exe,
+  args : ['print_device_table'],
+  suite : 'print')
+
+# ##############
+# # udev tests #
+# ##############
+
+udev_test_exe = executable('udev_test',
+  sources : ['src/udev_test.c'] + pnetctl_src,
+  dependencies : pnetctl_dep)
+
+test('udev_scan_devices',
+  udev_test_exe,
+  args : ['udev_scan_devices'],
+  suite : 'udev')
+
+# #################
+# # verbose tests #
+# #################
+
+verbose_test_exe = executable('verbose_test',
+  sources : ['src/verbose_test.c'] + pnetctl_src,
+  dependencies : pnetctl_dep)
+
+test('verbose',
+  verbose_test_exe,
+  args : ['verbose'],
+  suite : 'verbose')
+
+# ################################
+# # Command Line Arguments Tests #
+# ################################
 
 # parallel cli argument tests
 test('help',
@@ -116,99 +241,3 @@ test('get all verbose',
   is_parallel : false,
   priority : -270,
   suite : 'cli')
-
-# devices tests
-devices_test_exe = executable('devices_test',
-  sources : ['src/devices_test.c'] + pnetctlsrc,
-  dependencies : pnetctldep)
-
-test('new_device',
-  devices_test_exe,
-  args : ['new_device'],
-  suite : 'devices')
-test('get_next_device',
-  devices_test_exe,
-  args : ['get_next_device'],
-  suite : 'devices')
-test('set_pnetid_for_eth',
-  devices_test_exe,
-  args : ['set_pnetid_for_eth'],
-  suite : 'devices')
-test('set_pnetid_for_ib',
-  devices_test_exe,
-  args : ['set_pnetid_for_ib'],
-  suite : 'devices')
-test('free_devices',
-  devices_test_exe,
-  args : ['free_devices'],
-  suite : 'devices')
-
-# netlink tests
-netlink_test_exe = executable('netlink_test',
-  sources : ['src/netlink_test.c'] + pnetctlsrc,
-  dependencies : pnetctldep)
-
-test('nl_init',
-  netlink_test_exe,
-  args : ['nl_init'],
-  suite : 'netlink')
-test('nl_cleanup',
-  netlink_test_exe,
-  args : ['nl_cleanup'],
-  suite : 'netlink')
-test('nl_flush_pnetids',
-  netlink_test_exe,
-  args : ['nl_flush_pnetids'],
-  suite : 'netlink')
-test('nl_del_pnetid',
-  netlink_test_exe,
-  args : ['nl_del_pnetid'],
-  suite : 'netlink')
-test('nl_set_pnetid',
-  netlink_test_exe,
-  args : ['nl_set_pnetid'],
-  suite : 'netlink')
-test('nl_get_pnetids',
-  netlink_test_exe,
-  args : ['nl_get_pnetids'],
-  suite : 'netlink')
-
-# udev tests
-udev_test_exe = executable('udev_test',
-  sources : ['src/udev_test.c'] + pnetctlsrc,
-  dependencies : pnetctldep)
-
-test('udev_scan_devices',
-  udev_test_exe,
-  args : ['udev_scan_devices'],
-  suite : 'udev')
-
-# print tests
-print_test_exe = executable('print_test',
-  sources : ['src/print_test.c'] + pnetctlsrc,
-  dependencies : pnetctldep)
-
-test('print_device_table',
-  print_test_exe,
-  args : ['print_device_table'],
-  suite : 'print')
-
-# verbose tests
-verbose_test_exe = executable('verbose_test',
-  sources : ['src/verbose_test.c'] + pnetctlsrc,
-  dependencies : pnetctldep)
-
-test('verbose',
-  verbose_test_exe,
-  args : ['verbose'],
-  suite : 'verbose')
-
-# cmd tests
-cmd_test_exe = executable('cmd_test',
-  sources : ['src/cmd_test.c'] + pnetctlsrc,
-  dependencies : pnetctldep)
-
-test('parse_cmd_line',
-  cmd_test_exe,
-  args : ['parse_cmd_line'],
-  suite : 'cmd')
