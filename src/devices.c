@@ -10,6 +10,9 @@
 #include "devices.h"
 #include "verbose.h"
 
+/* list of devices */
+struct device devices_list = {};
+
 /* get next device in devices list */
 struct device *get_next_device(struct device *device) {
 	return device->next;

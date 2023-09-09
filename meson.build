@@ -12,6 +12,7 @@ pnetctl_src = [
   'src/udev.c',
   'src/verbose.c',
 ]
+test_src = pnetctl_src + 'src/test.c'
 exe = executable('pnetctl',
   sources : ['src/main.c'] + pnetctl_src,
   dependencies : pnetctl_dep,
@@ -22,7 +23,7 @@ exe = executable('pnetctl',
 # #############
 
 cmd_test_exe = executable('cmd_test',
-  sources : ['src/cmd_test.c'] + pnetctl_src,
+  sources : ['src/cmd_test.c'] + test_src,
   dependencies : pnetctl_dep)
 
 test('parse_cmd_line',
@@ -35,7 +36,7 @@ test('parse_cmd_line',
 # #################
 
 devices_test_exe = executable('devices_test',
-  sources : ['src/devices_test.c'] + pnetctl_src,
+  sources : ['src/devices_test.c'] + test_src,
   dependencies : pnetctl_dep)
 
 test('new_device',
@@ -64,7 +65,7 @@ test('free_devices',
 # #################
 
 netlink_test_exe = executable('netlink_test',
-  sources : ['src/netlink_test.c'] + pnetctl_src,
+  sources : ['src/netlink_test.c'] + test_src,
   dependencies : pnetctl_dep)
 
 test('nl_init',
@@ -97,7 +98,7 @@ test('nl_get_pnetids',
 # ###############
 
 print_test_exe = executable('print_test',
-  sources : ['src/print_test.c'] + pnetctl_src,
+  sources : ['src/print_test.c'] + test_src,
   dependencies : pnetctl_dep)
 
 test('print_device_table',
@@ -110,7 +111,7 @@ test('print_device_table',
 # ##############
 
 udev_test_exe = executable('udev_test',
-  sources : ['src/udev_test.c'] + pnetctl_src,
+  sources : ['src/udev_test.c'] + test_src,
   dependencies : pnetctl_dep)
 
 test('udev_scan_devices',
@@ -123,7 +124,7 @@ test('udev_scan_devices',
 # #################
 
 verbose_test_exe = executable('verbose_test',
-  sources : ['src/verbose_test.c'] + pnetctl_src,
+  sources : ['src/verbose_test.c'] + test_src,
   dependencies : pnetctl_dep)
 
 test('verbose',

@@ -9,6 +9,12 @@
 #include "verbose.h"
 #include "print.h"
 
+/* pnetid filter when printing the device table */
+const char *pnetid_filter = NULL;
+
+/* verbose output, disabled by default */
+int verbose_mode = 0;
+
 /* print usage */
 void print_usage() {
 	printf("------------------------------------------------------------\n"

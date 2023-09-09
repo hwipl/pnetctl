@@ -5,6 +5,6 @@
 #define IB_DEFAULT_PORT 1 /* default port for infiniband devices */
 
 /* pnetid filter when printing the device table */
-const char *pnetid_filter;
+extern const char *pnetid_filter;
 
 #endif

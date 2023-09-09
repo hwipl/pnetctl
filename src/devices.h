@@ -31,7 +31,7 @@ struct device {
 };
 
 /* list of devices */
-struct device devices_list;
+extern struct device devices_list;
 
 struct device *new_device();
 struct device *get_next_device(struct device *device);
